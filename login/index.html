@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="conferindo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Entrar | Painel Maria Clara</title>
+<meta name="theme-color" content="#4f1821">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/painel.css">
+</head>
+<body>
+<main class="login-pagina">
+  <div class="login-cartao">
+    <p class="login-marca">Maria Clara · painel</p>
+
+    <!-- ENTRAR -->
+    <form id="form-entrar" novalidate>
+      <h1>Entrar</h1>
+      <p class="suave">Área só minha, para cuidar do site e da rotina.</p>
+      <div class="faixa" id="faixa-entrar" role="alert" hidden></div>
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" autocomplete="username" required>
+      </div>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-vinho" type="submit" id="botao-entrar">Entrar</button>
+      <div class="login-rodape">
+        <button class="link-botao" type="button" id="esqueci">Esqueci minha senha</button>
+        <a href="../">Voltar ao site</a>
+      </div>
+    </form>
+
+    <!-- NOVA SENHA (aparece quando você abre o link do e-mail de recuperação) -->
+    <form id="form-nova" novalidate hidden>
+      <h1>Criar nova senha</h1>
+      <p class="suave">Escolha uma senha nova com pelo menos 8 caracteres.</p>
+      <div class="faixa" id="faixa-nova" role="alert" hidden></div>
+      <div class="campo">
+        <label for="nova-senha">Nova senha</label>
+        <input id="nova-senha" type="password" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="campo">
+        <label for="nova-senha-2">Repita a nova senha</label>
+        <input id="nova-senha-2" type="password" autocomplete="new-password" minlength="8" required>
+      </div>
+      <button class="btn btn-vinho" type="submit" id="botao-nova">Salvar nova senha</button>
+      <div class="login-rodape">
+        <a href="./">Voltar para o login</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/banco.js"></script>
+<script>
+(function () {
+  "use strict";
+  var banco = window.banco;
+  var formEntrar = document.getElementById("form-entrar");
+  var formNova = document.getElementById("form-nova");
+
+  function faixa(id, texto, tipo) {
+    var el = document.getElementById(id);
+    if (!texto) { el.hidden = true; return; }
+    el.className = "faixa " + (tipo === "ok" ? "faixa-ok" : "faixa-erro");
+    el.textContent = texto;
+    el.hidden = false;
+  }
+  function mostrarPagina() { document.documentElement.classList.remove("conferindo"); }
+
+  // Troca os erros do Supabase (em inglês) por frases em português
+  function traduzir(erro, padrao) {
+    var codigo = (erro && (erro.code || "")) + " " + (erro && erro.message || "");
+    codigo = codigo.toLowerCase();
+    if (/invalid_credentials|invalid login/.test(codigo)) return "E-mail ou senha incorretos";
+    if (/email_not_confirmed|not confirmed/.test(codigo)) return "Esse e-mail ainda não foi confirmado. Confira a sua caixa de entrada.";
+    if (/email_send_rate|email rate/.test(codigo)) return "Um e-mail já foi enviado há pouco. Espere alguns minutos antes de pedir outro.";
+    if (/rate_limit|too many|429/.test(codigo)) return "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.";
+    if (/same_password|different from the old/.test(codigo)) return "A nova senha precisa ser diferente da antiga.";
+    if (/weak_password|password should/.test(codigo)) return "Essa senha é fraca. Use pelo menos 8 caracteres, misturando letras e números.";
+    if (/fetch|network|failed to|load failed|retryable/.test(codigo)) return "Não consegui falar com o servidor. Confira a internet e tente de novo.";
+    return padrao;
+  }
+
+  if (!banco) {
+    mostrarPagina();
+    faixa("faixa-entrar", "Não consegui carregar o sistema de login. Confira a internet e recarregue a página.");
+    return;
+  }
+
+  var busca = new URLSearchParams(location.search);
+  var hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+  var modoNovaSenha = busca.has("nova-senha") || hash.get("type") === "recovery";
+
+  // Link de recuperação vencido ou já usado
+  if (hash.get("error_code") || hash.get("error")) {
+    modoNovaSenha = false;
+    faixa("faixa-entrar", "Esse link de recuperação venceu ou já foi usado. Digite o seu e-mail e peça um novo em \"Esqueci minha senha\".");
+    history.replaceState(null, "", location.pathname);
+  }
+
+  if (modoNovaSenha) {
+    formEntrar.hidden = true;
+    formNova.hidden = false;
+    mostrarPagina();
+  } else {
+    // Já tem sessão aberta? Vai direto pro painel.
+    banco.auth.getSession().then(function (r) {
+      if (r.data && r.data.session) location.replace("../admin/");
+      else { mostrarPagina(); document.getElementById("email").focus(); }
+    }).catch(mostrarPagina);
+  }
+
+  banco.auth.onAuthStateChange(function (evento) {
+    if (evento === "PASSWORD_RECOVERY") {
+      formEntrar.hidden = true;
+      formNova.hidden = false;
+      mostrarPagina();
+    }
+  });
+
+  // ENTRAR
+  formEntrar.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var email = formEntrar.email.value.trim();
+    var senha = formEntrar.senha.value;
+    if (!email || !senha) { faixa("faixa-entrar", "Preencha o e-mail e a senha."); return; }
+    var botao = document.getElementById("botao-entrar");
+    botao.disabled = true; botao.textContent = "Entrando...";
+    faixa("faixa-entrar", "");
+    banco.auth.signInWithPassword({ email: email, password: senha }).then(function (r) {
+      if (r.error) throw r.error;
+      location.replace("../admin/");
+    }).catch(function (erro) {
+      faixa("faixa-entrar", traduzir(erro, "E-mail ou senha incorretos"));
+      botao.disabled = false; botao.textContent = "Entrar";
+      formEntrar.senha.select();
+    });
+  });
+
+  // ESQUECI MINHA SENHA
+  document.getElementById("esqueci").addEventListener("click", function () {
+    var email = formEntrar.email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      faixa("faixa-entrar", "Digite o seu e-mail no campo acima e clique de novo em \"Esqueci minha senha\".");
+      formEntrar.email.focus();
+      return;
+    }
+    var botao = this;
+    botao.disabled = true;
+    var voltaPara = location.origin + location.pathname + "?nova-senha=1";
+    banco.auth.resetPasswordForEmail(email, { redirectTo: voltaPara }).then(function (r) {
+      if (r.error) throw r.error;
+      faixa("faixa-entrar", "Pronto! Se esse e-mail tiver acesso, o link para criar uma nova senha chega em alguns minutos. Confira também o spam.", "ok");
+    }).catch(function (erro) {
+      faixa("faixa-entrar", traduzir(erro, "Não consegui enviar o e-mail agora. Tente de novo em alguns minutos."));
+    }).then(function () { botao.disabled = false; });
+  });
+
+  // NOVA SENHA
+  formNova.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var s1 = document.getElementById("nova-senha").value;
+    var s2 = document.getElementById("nova-senha-2").value;
+    if (s1.length < 8) { faixa("faixa-nova", "A senha precisa ter pelo menos 8 caracteres."); return; }
+    if (s1 !== s2) { faixa("faixa-nova", "As duas senhas não estão iguais."); return; }
+    var botao = document.getElementById("botao-nova");
+    botao.disabled = true; botao.textContent = "Salvando...";
+    banco.auth.getSession().then(function (r) {
+      if (!r.data || !r.data.session) throw { code: "sem_sessao" };
+      return banco.auth.updateUser({ password: s1 });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      faixa("faixa-nova", "Senha nova salva! Abrindo o painel...", "ok");
+      setTimeout(function () { location.replace("../admin/"); }, 900);
+    }).catch(function (erro) {
+      var msg = erro && erro.code === "sem_sessao"
+        ? "Esse link venceu. Volte para o login e peça um novo em \"Esqueci minha senha\"."
+        : traduzir(erro, "Não consegui salvar a senha. Tente de novo.");
+      faixa("faixa-nova", msg);
+      botao.disabled = false; botao.textContent = "Salvar nova senha";
+    });
+  });
+})();
+</script>
+</body>
+</html>

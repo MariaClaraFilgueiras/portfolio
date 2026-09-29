@@ -187,6 +187,7 @@ a.video:hover .video-capa{transform:translateY(-6px);box-shadow:0 18px 34px rgba
 }
 .play::after{content:"";position:absolute;left:21px;top:16px;border-style:solid;border-width:11px 0 11px 17px;border-color:transparent transparent transparent #fff}
 a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
+.video-destaque{position:absolute;z-index:2;top:10px;left:10px;font-size:10.5px;font-weight:700;letter-spacing:.04em;background:rgba(250,240,232,.92);color:var(--vinho);padding:3px 8px;border-radius:999px}
 .video-legenda{text-align:center;margin-top:12px;line-height:1.35;font-style:italic;text-transform:uppercase}
 .video-legenda span{display:block;font-size:11px;font-weight:500;letter-spacing:.04em}
 .video-legenda b{display:block;font-size:11px;font-weight:800;letter-spacing:.04em}
@@ -649,9 +650,8 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
 
       <div class="form-cartao revelar" style="--atraso:.1s">
         <!--
-          O formulário mostra a confirmação na tela, mas ainda não envia para lugar nenhum.
-          Para receber as mensagens no seu e-mail, crie um formulário grátis no formspree.io
-          e siga o comentário "ENVIO DO FORMULÁRIO" no script.
+          O formulário grava cada mensagem no seu painel (aba Marcas), como "Lead".
+          O envio está no script, em "Formulário de contato".
         -->
         <form id="form-contato" novalidate>
           <h3>Me conta sobre a sua marca</h3>
@@ -659,6 +659,10 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
             <label for="contato-nome">Seu nome</label>
             <input id="contato-nome" name="nome" type="text" autocomplete="name" required aria-describedby="contato-nome-erro" placeholder="Como posso te chamar?">
             <span class="erro" id="contato-nome-erro"></span>
+          </div>
+          <div class="campo">
+            <label for="contato-marca">Nome da marca <span style="text-transform:none;font-weight:500;letter-spacing:0">(opcional)</span></label>
+            <input id="contato-marca" name="marca" type="text" autocomplete="organization" maxlength="150" placeholder="Qual é a sua marca?">
           </div>
           <div class="campo">
             <label for="contato-email">Seu e-mail</label>
@@ -670,7 +674,13 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
             <textarea id="contato-mensagem" name="mensagem" required aria-describedby="contato-mensagem-erro" placeholder="Qual é a marca, o produto e o que você precisa?"></textarea>
             <span class="erro" id="contato-mensagem-erro"></span>
           </div>
-          <button class="btn btn-vinho" type="submit">Enviar mensagem</button>
+          <!-- Campo escondido: pessoas não veem, só robôs preenchem -->
+          <div class="visualmente-oculto" aria-hidden="true">
+            <label for="contato-site">Não preencha este campo</label>
+            <input id="contato-site" name="site" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <button class="btn btn-vinho" type="submit" id="contato-enviar">Enviar mensagem</button>
+          <p class="erro" id="contato-envio-erro" role="alert" style="margin-top:12px;text-align:center"></p>
         </form>
         <div class="confirmacao" id="contato-ok" hidden tabindex="-1" role="status">
           <span class="selo-ok" aria-hidden="true">✓</span>
@@ -736,6 +746,9 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
   </div>
 </div>
 
+<!-- Ligação com o banco de dados (vídeos, formulário e visitas) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/banco.js"></script>
 <script>
 (function () {
   "use strict";
@@ -758,6 +771,10 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
   ];
 
   // TRABALHOS POR NICHO: cada nicho vira um botão de filtro e um bloco de vídeos.
+  // IMPORTANTE: agora os vídeos vêm do seu painel (aba Portfólio). Esta lista só
+  // aparece enquanto o painel ainda não tiver nenhum vídeo visível, ou se o banco
+  // estiver fora do ar. O nome, a palavra cursiva e o subtítulo de cada nicho
+  // continuam vindo daqui quando o nicho do painel tiver o mesmo nome.
   // script: palavra em letra cursiva que aparece clarinha atrás do título.
   // Em cada trabalho: titulo (pode ficar vazio), tipo, link do vídeo (TROCAR) e capa 9:16 (TROCAR).
   var nichos = [
@@ -898,8 +915,10 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
     var capa = v.capa
       ? '<div class="midia"><img src="' + esc(v.capa) + '" alt="Capa do vídeo: ' + esc(nome) + '" loading="lazy" width="540" height="960"></div>'
       : '<div class="midia" style="background:' + degrades[i % degrades.length] + '"><span class="midia-legenda">capa 9:16</span></div>';
-    var legenda = '<p class="video-legenda">' + (v.titulo ? "<span>" + esc(v.titulo) + "</span>" : "") + "<b>" + esc(v.tipo) + "</b></p>";
-    var miolo = '<div class="video-capa">' + capa + '<span class="play" aria-hidden="true"></span></div>' + legenda;
+    var legenda = '<p class="video-legenda">' + (v.titulo ? "<span>" + esc(v.titulo) + "</span>" : "") + "<b>" + esc(v.tipo || "") + "</b>" +
+      (v.marca ? "<span>" + esc(v.marca) + "</span>" : "") + "</p>";
+    var selo = v.destaque ? '<span class="video-destaque">' + esc(v.destaque) + "</span>" : "";
+    var miolo = '<div class="video-capa">' + capa + selo + '<span class="play" aria-hidden="true"></span></div>' + legenda;
     if (v.link) {
       return '<a class="video" href="' + esc(v.link) + '" target="_blank" rel="noopener">' + miolo +
         '<span class="visualmente-oculto"> Assistir ao vídeo (abre em nova aba)</span></a>';
@@ -913,8 +932,9 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
   }).join("") +
   '<p class="monograma revelar" aria-hidden="true"><b>MCF</b><small><span>Maria Clara Filgueiras</span></small></p>';
 
-  // Trabalhos por nicho
-  document.getElementById("nichos").innerHTML = nichos.map(function (n) {
+  // Trabalhos por nicho (desenhado por desenharNichos, lá embaixo em "Vídeos do painel")
+  function htmlNichos(lista) {
+    return lista.map(function (n) {
     return '<section class="nicho" data-nicho="' + esc(n.id) + '" aria-labelledby="nicho-' + esc(n.id) + '">' +
       '<div class="nicho-cabecalho revelar">' +
         '<h3 class="titulo-serifa titulo-script" data-script="' + esc(n.script) + '" id="nicho-' + esc(n.id) + '"><span>' + esc(n.nome) + "</span></h3>" +
@@ -923,15 +943,18 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
       '<ul class="nicho-grade">' + n.trabalhos.map(function (t, i) {
         return '<li class="revelar" style="--atraso:' + ((i % 4) * 0.08) + 's">' + cardVideo(t, i) + "</li>";
       }).join("") + "</ul></section>";
-  }).join("");
+    }).join("");
+  }
 
   // Filtros por nicho
   var filtros = document.getElementById("filtros");
   var aviso = document.getElementById("aviso-filtro");
-  filtros.innerHTML = '<button type="button" class="filtro" data-filtro="todos" aria-pressed="true">Todos</button>' +
-    nichos.map(function (n) {
-      return '<button type="button" class="filtro" data-filtro="' + esc(n.id) + '" aria-pressed="false">' + esc(n.nome) + "</button>";
-    }).join("");
+  function htmlFiltros(lista) {
+    return '<button type="button" class="filtro" data-filtro="todos" aria-pressed="true">Todos</button>' +
+      lista.map(function (n) {
+        return '<button type="button" class="filtro" data-filtro="' + esc(n.id) + '" aria-pressed="false">' + esc(n.nome) + "</button>";
+      }).join("");
+  }
   filtros.addEventListener("click", function (e) {
     var botao = e.target.closest(".filtro");
     if (!botao) return;
@@ -1011,17 +1034,20 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
   window.addEventListener("scroll", function () { topo.classList.toggle("rolou", window.scrollY > 10); }, { passive: true });
 
   /* ---------- Animação de entrada ao rolar ---------- */
-  var reveladores = document.querySelectorAll(".revelar");
+  var obsRevelar = null;
   if ("IntersectionObserver" in window && !reduzMovimento) {
-    var obsRevelar = new IntersectionObserver(function (entradas) {
+    obsRevelar = new IntersectionObserver(function (entradas) {
       entradas.forEach(function (en) {
         if (en.isIntersecting) { en.target.classList.add("visivel"); obsRevelar.unobserve(en.target); }
       });
     }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
-    reveladores.forEach(function (el) { obsRevelar.observe(el); });
-  } else {
-    reveladores.forEach(function (el) { el.classList.add("visivel"); });
   }
+  function revelar(raiz) {
+    (raiz || document).querySelectorAll(".revelar:not(.visivel)").forEach(function (el) {
+      if (obsRevelar) obsRevelar.observe(el); else el.classList.add("visivel");
+    });
+  }
+  revelar();
 
   /* ---------- Contadores animados ---------- */
   function animarContador(el) {
@@ -1068,22 +1094,51 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
   /* ---------- Formulário de contato ---------- */
   var formContato = document.getElementById("form-contato");
   var okContato = document.getElementById("contato-ok");
-  formContato.addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (!validar(formContato)) return;
-    /*
-      ENVIO DO FORMULÁRIO: para receber de verdade, crie um formulário no formspree.io,
-      copie o endereço que ele te der e coloque esta linha aqui:
-      fetch("https://formspree.io/f/SEU_CODIGO", { method: "POST", body: new FormData(formContato), headers: { Accept: "application/json" } });
-    */
+  var erroEnvio = document.getElementById("contato-envio-erro");
+  var botaoEnviar = document.getElementById("contato-enviar");
+  function mostrarObrigada() {
     document.getElementById("contato-ok-texto").textContent =
       "Obrigada, " + primeiroNome(formContato.nome.value) + "! Recebi sua mensagem e te respondo em até 1 dia útil.";
     formContato.hidden = true;
     okContato.hidden = false;
     okContato.focus();
+  }
+  formContato.addEventListener("submit", function (e) {
+    e.preventDefault();
+    erroEnvio.textContent = "";
+    if (!validar(formContato)) return;
+    // Robô preencheu o campo escondido: finge que foi e não grava nada
+    if (formContato.site.value) { mostrarObrigada(); return; }
+    var falhou = "Não consegui enviar agora. Tente de novo em instantes ou me chame no e-mail mariaugclara@gmail.com.";
+    if (!window.banco) { erroEnvio.textContent = falhou; return; }
+    var pessoa = formContato.nome.value.trim();
+    var marca = formContato.marca.value.trim();
+    var agora = new Date();
+    var hoje = agora.getFullYear() + "-" + String(agora.getMonth() + 1).padStart(2, "0") + "-" + String(agora.getDate()).padStart(2, "0");
+    botaoEnviar.disabled = true;
+    botaoEnviar.textContent = "Enviando...";
+    // Entra na aba Marcas do painel como "Lead"
+    window.banco.from("marcas").insert({
+      nome: (marca || pessoa).slice(0, 200),
+      email: formContato.email.value.trim().slice(0, 200),
+      situacao: "Lead",
+      origem: "site",
+      ultimo_contato: hoje,
+      obs: ("Contato: " + pessoa + ". Mensagem pelo site: " + formContato.mensagem.value.trim()).slice(0, 5000)
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      mostrarObrigada();
+    }).catch(function (err) {
+      if (window.console) console.error(err);
+      erroEnvio.textContent = falhou;
+    }).then(function () {
+      botaoEnviar.disabled = false;
+      botaoEnviar.textContent = "Enviar mensagem";
+    });
   });
   document.getElementById("contato-nova").addEventListener("click", function () {
     formContato.reset();
+    erroEnvio.textContent = "";
     okContato.hidden = true;
     formContato.hidden = false;
     formContato.nome.focus();
@@ -1143,6 +1198,83 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
       abrirModal();
     }, 7000);
   }
+
+  /* ---------- Vídeos do painel ---------- */
+  // Lê os vídeos visíveis da tabela "videos". Sem nenhum, ou sem banco, usa a lista fixa lá de cima.
+  function chaveNicho(t) { return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
+  function nichosDoBanco(linhas) {
+    var mapa = {}, lista = [];
+    linhas.slice().sort(function (a, b) { return (a.ordem || 0) - (b.ordem || 0) || (a.id || 0) - (b.id || 0); })
+      .forEach(function (v) {
+        var nome = String(v.nicho || "").trim() || "Outros";
+        var chave = chaveNicho(nome);
+        if (!mapa[chave]) {
+          var base = nichos.filter(function (n) { return chaveNicho(n.nome) === chave || n.id === chave; })[0];
+          mapa[chave] = base
+            ? { id: base.id, nome: base.nome, script: base.script, subtitulo: base.subtitulo, trabalhos: [] }
+            : { id: "n-" + chave.replace(/[^a-z0-9]+/g, "-"), nome: nome, script: nome, subtitulo: "", trabalhos: [] };
+          lista.push(mapa[chave]);
+        }
+        mapa[chave].trabalhos.push({ titulo: v.titulo || "", tipo: v.formato || "", link: v.link || "", capa: "", marca: v.marca || "", destaque: v.destaque || "" });
+      });
+    return lista;
+  }
+  var nichosDesenhados = false;
+  function desenharNichos(lista) {
+    document.getElementById("nichos").innerHTML = htmlNichos(lista);
+    filtros.innerHTML = htmlFiltros(lista);
+    aviso.textContent = "";
+    revelar(document.getElementById("nichos"));
+    nichosDesenhados = true;
+  }
+  if (window.banco) {
+    // Se o banco demorar, mostra a lista fixa e troca quando os vídeos chegarem
+    var reserva = setTimeout(function () { if (!nichosDesenhados) desenharNichos(nichos); }, 3500);
+    window.banco.from("videos").select("*").eq("visivel", true).then(function (r) {
+      clearTimeout(reserva);
+      var linhas = (!r.error && r.data ? r.data : []).filter(function (v) { return !v.exemplo; });
+      if (linhas.length) desenharNichos(nichosDoBanco(linhas));
+      else if (!nichosDesenhados) desenharNichos(nichos);
+    }, function () { clearTimeout(reserva); if (!nichosDesenhados) desenharNichos(nichos); });
+  } else {
+    desenharNichos(nichos);
+  }
+
+  /* ---------- Registro de visita ---------- */
+  // Grava só a data, a página e de onde a pessoa veio. Nada de nome, IP ou cookie.
+  // Conta uma vez por sessão, e não conta quando é você (logada no painel).
+  function origemDaVisita() {
+    var nomes = { instagram: "Instagram", ig: "Instagram", facebook: "Facebook", fb: "Facebook", tiktok: "TikTok", whatsapp: "WhatsApp", wpp: "WhatsApp", google: "Google", linkedin: "LinkedIn", youtube: "YouTube", email: "E-mail" };
+    var utm = new URLSearchParams(location.search).get("utm_source");
+    if (utm) return (nomes[utm.toLowerCase()] || utm).slice(0, 60);
+    var ua = navigator.userAgent || "";
+    if (/Instagram/i.test(ua)) return "Instagram";
+    if (/FBAN|FBAV|FB_IAB/i.test(ua)) return "Facebook";
+    if (/musical_ly|Bytedance|TikTok/i.test(ua)) return "TikTok";
+    if (/LinkedInApp/i.test(ua)) return "LinkedIn";
+    var site = "";
+    try { site = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch (err) {}
+    if (!site || site === location.hostname) return "Direto";
+    var regras = [
+      [/instagram/, "Instagram"], [/facebook|fb\.com|fb\.me/, "Facebook"], [/tiktok/, "TikTok"],
+      [/whatsapp|wa\.me/, "WhatsApp"], [/google\./, "Google"], [/bing|duckduckgo|yahoo|ecosia/, "Outros buscadores"],
+      [/linkedin|lnkd/, "LinkedIn"], [/youtube|youtu\.be/, "YouTube"], [/^t\.co$|twitter|^x\.com$/, "X (Twitter)"], [/pinterest/, "Pinterest"]
+    ];
+    for (var i = 0; i < regras.length; i++) if (regras[i][0].test(site)) return regras[i][1];
+    return site.slice(0, 60);
+  }
+  function registrarVisita() {
+    if (!window.banco || navigator.webdriver) return;
+    var chave = "visitaRegistrada:" + location.pathname;
+    try { if (sessionStorage.getItem(chave)) return; } catch (err) {}
+    window.banco.auth.getSession().then(function (r) {
+      if (r.data && r.data.session) return; // é você navegando: não conta
+      return window.banco.from("visitas").insert({ pagina: location.pathname.slice(0, 300), origem: origemDaVisita() }).then(function (res) {
+        if (!res.error) { try { sessionStorage.setItem(chave, "1"); } catch (err) {} }
+      });
+    }).catch(function () {});
+  }
+  registrarVisita();
 })();
 </script>
 </body>
