@@ -6,7 +6,7 @@
    3. conversa com o banco, com proteção contra tabela ou campo faltando
    4. menu e abas
    5. janela de formulário
-   6 a 10. as cinco abas
+   6 a 11. as seis abas
    ========================================================= */
 (function () {
   "use strict";
@@ -145,14 +145,15 @@
      3. CONVERSA COM O BANCO
      Se faltar uma tabela ou um campo, o painel avisa e segue.
      ========================================================= */
-  var NOMES = { videos: "videos", marcas: "marcas", calendario: "calendario", campanhas: "campanhas", marcados: "marcados", visitas: "visitas" };
+  var NOMES = { videos: "videos", marcas: "marcas", calendario: "calendario", campanhas: "campanhas", marcados: "marcados", visitas: "visitas", transcricoes: "transcricoes" };
   var COLUNAS = {
     videos: ["id", "titulo", "link", "nicho", "formato", "marca", "destaque", "ordem", "visivel", "exemplo"],
     marcas: ["id", "criado_em", "nome", "instagram", "email", "telefone", "situacao", "obs", "ultimo_contato", "origem", "exemplo"],
     calendario: ["id", "titulo", "marca", "tipo", "data", "status", "exemplo"],
     campanhas: ["id", "campanha", "cliente", "tipo", "status", "qtd", "valor", "prazo", "pagamento", "ativa", "favorita", "exemplo"],
     marcados: ["chave"],
-    visitas: ["data", "pagina", "origem"]
+    visitas: ["data", "pagina", "origem"],
+    transcricoes: ["id", "criado_em", "link", "plataforma", "titulo", "criador", "transcricao", "observacoes", "exemplo"]
   };
   var faltando = {};        // campos que não existem, por tabela
   var tabelaFalta = {};     // tabelas que não existem
@@ -264,7 +265,7 @@
   /* =========================================================
      ESTADO: tudo o que veio do banco
      ========================================================= */
-  var dados = { videos: [], marcas: [], calendario: [], campanhas: [], marcados: {}, visitas: [] };
+  var dados = { videos: [], marcas: [], calendario: [], campanhas: [], marcados: {}, visitas: [], transcricoes: [] };
   var carregado = false;
 
   async function carregarTudo() {
@@ -275,12 +276,14 @@
       lerTabela("calendario"),
       lerTabela("campanhas"),
       lerTabela("marcados"),
-      lerTabela("visitas", function (q) { return q.gte("data", inicio14.toISOString()).order("data"); })
+      lerTabela("visitas", function (q) { return q.gte("data", inicio14.toISOString()).order("data"); }),
+      lerTabela("transcricoes")
     ].map(function (p) { return p.catch(function (e) { console.error(e); return []; }); }));
     dados.videos = r[0]; dados.marcas = r[1]; dados.calendario = r[2]; dados.campanhas = r[3];
     dados.marcados = {};
     r[4].forEach(function (m) { if (m.chave) dados.marcados[m.chave] = true; });
     dados.visitas = r[5];
+    dados.transcricoes = r[6];
     carregado = true;
   }
 
@@ -292,7 +295,8 @@
     marcas: { titulo: "Marcas", sub: "a minha base de contatos", desenhar: desenharMarcas },
     calendario: { titulo: "Calendário", sub: "gravar, editar e postar", desenhar: desenharCalendario },
     campanhas: { titulo: "Campanhas", sub: "trabalhos fechados", desenhar: desenharCampanhas },
-    checklist: { titulo: "Checklist Portfólio", sub: "consulta e revisão", desenhar: desenharChecklist }
+    checklist: { titulo: "Checklist Portfólio", sub: "consulta e revisão", desenhar: desenharChecklist },
+    transcricoes: { titulo: "Transcrições", sub: "vídeos que eu gosto, com roteiro e observações", desenhar: desenharTranscricoes }
   };
   var abaAtual = "portfolio";
 
@@ -302,6 +306,7 @@
   }
 
   function mostrarAba(nome) {
+    salvarTranscricaoAgora();
     abaAtual = nome;
     $$(".aba").forEach(function (s) { s.hidden = s.getAttribute("data-aba") !== nome; });
     $$(".lateral-item").forEach(function (a) {
@@ -1411,6 +1416,252 @@
         desenharSub(B);
         avisoRapido("Revisão zerada");
       }).catch(function (e) { avisoRapido(traduzirErro(e), true); });
+    });
+  }
+
+  /* =========================================================
+     11. ABA TRANSCRIÇÕES
+     Você cola o link, vê o vídeo, cola o texto do site de
+     transcrição e escreve as observações. Tudo salva sozinho.
+     ========================================================= */
+  var SITE_TRANSCRICAO_PADRAO = "https://supadata.ai/instagram-transcript";
+  var CHAVE_SITE_TRANSCRICAO = "painel-site-transcricao";
+  var estadoTr = { sel: null, busca: "" };
+  var pendenteTr = { id: null, campos: {} }, timerTr = null;
+
+  function siteTranscricao() {
+    try { return localStorage.getItem(CHAVE_SITE_TRANSCRICAO) || SITE_TRANSCRICAO_PADRAO; } catch (e) { return SITE_TRANSCRICAO_PADRAO; }
+  }
+
+  // Descobre a plataforma e o endereço para mostrar o vídeo dentro do painel
+  function infoDoLink(link) {
+    link = String(link || "").trim();
+    var m;
+    if ((m = link.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{6,})/i))) {
+      return { plataforma: "YouTube", embed: "https://www.youtube-nocookie.com/embed/" + m[1], formato: /shorts\//i.test(link) ? "vertical" : "horizontal" };
+    }
+    if ((m = link.match(/instagram\.com\/(?:[\w.]+\/)?(p|reel|reels|tv)\/([\w-]+)/i))) {
+      var tipo = m[1].toLowerCase() === "reels" ? "reel" : m[1].toLowerCase();
+      return { plataforma: "Instagram", embed: "https://www.instagram.com/" + tipo + "/" + m[2] + "/embed", formato: "instagram" };
+    }
+    if ((m = link.match(/tiktok\.com\/.*\/video\/(\d+)/i))) {
+      return { plataforma: "TikTok", embed: "https://www.tiktok.com/embed/v2/" + m[1], formato: "vertical" };
+    }
+    if (/tiktok\.com/i.test(link)) return { plataforma: "TikTok", embed: "", formato: "" };
+    return { plataforma: link ? "Outro" : "", embed: "", formato: "" };
+  }
+
+  function transcricoesOrdenadas() {
+    return dados.transcricoes.slice().sort(function (a, b) {
+      return String(b.criado_em || "").localeCompare(String(a.criado_em || "")) || numero(b.id) - numero(a.id);
+    });
+  }
+
+  function statusTr(texto, erro) {
+    var el = $("#tr-status");
+    if (!el) return;
+    el.textContent = texto;
+    el.style.color = erro ? "var(--vermelho)" : "";
+  }
+
+  function agendarSalvarTr(id, campo, valor) {
+    if (pendenteTr.id !== null && pendenteTr.id !== id) salvarTranscricaoAgora();
+    var item = acharPorId(dados.transcricoes, id);
+    if (item) item[campo] = valor;
+    pendenteTr.id = id;
+    pendenteTr.campos[campo] = valor;
+    statusTr("Salvando...");
+    clearTimeout(timerTr);
+    timerTr = setTimeout(salvarTranscricaoAgora, 800);
+  }
+
+  function salvarTranscricaoAgora() {
+    clearTimeout(timerTr);
+    var id = pendenteTr.id, campos = pendenteTr.campos;
+    if (id === null || !Object.keys(campos).length) return;
+    pendenteTr = { id: null, campos: {} };
+    gravar("transcricoes", campos, id).then(function (linha) {
+      trocarNaLista(dados.transcricoes, linha);
+      if (estadoTr.sel === linha.id) statusTr("Salvo");
+      desenharListaTr();
+    }).catch(function (e) {
+      // Guarda de novo para tentar na próxima digitação
+      pendenteTr.id = id;
+      Object.keys(campos).forEach(function (k) { if (!(k in pendenteTr.campos)) pendenteTr.campos[k] = campos[k]; });
+      statusTr(traduzirErro(e) + " Não foi salvo ainda.", true);
+    });
+  }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") salvarTranscricaoAgora(); });
+  window.addEventListener("beforeunload", function (e) {
+    if (pendenteTr.id !== null && Object.keys(pendenteTr.campos).length) { salvarTranscricaoAgora(); e.preventDefault(); e.returnValue = ""; }
+  });
+
+  function desenharTranscricoes(painel) {
+    if (tabelaFalta.transcricoes) {
+      painel.innerHTML = '<p class="vazio">A tabela de transcrições ainda não existe no banco. Rode o banco.sql de novo no Supabase (SQL Editor) para começar.</p>';
+      return;
+    }
+    var lista = transcricoesOrdenadas();
+    if (!acharPorId(dados.transcricoes, estadoTr.sel)) estadoTr.sel = lista.length ? lista[0].id : null;
+
+    painel.innerHTML =
+      '<div class="tr-grade">' +
+        '<aside class="cartao tr-lista">' +
+          '<button class="btn btn-vinho" type="button" id="tr-novo">' + icone("mais") + "Colar link de vídeo</button>" +
+          '<label class="busca" style="flex:none;min-width:0"><span class="visualmente-oculto">Buscar transcrição</span>' + icone("busca") +
+            '<input class="entrada" type="search" id="tr-busca" placeholder="Buscar no título, @ ou texto" value="' + esc(estadoTr.busca) + '"></label>' +
+          '<ul class="tr-itens" id="tr-itens"></ul>' +
+        "</aside>" +
+        '<div id="tr-detalhe"></div>' +
+      "</div>";
+
+    $("#tr-novo").addEventListener("click", formularioTranscricao);
+    $("#tr-busca").addEventListener("input", function () { estadoTr.busca = this.value; desenharListaTr(); });
+    $("#tr-itens").addEventListener("click", function (e) {
+      var b = e.target.closest(".tr-item"); if (!b) return;
+      salvarTranscricaoAgora();
+      estadoTr.sel = +b.getAttribute("data-id");
+      desenharListaTr();
+      desenharDetalheTr();
+      if (window.matchMedia("(max-width:860px)").matches) $("#tr-detalhe").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    desenharListaTr();
+    desenharDetalheTr();
+  }
+
+  function desenharListaTr() {
+    var ul = $("#tr-itens");
+    if (!ul) return;
+    var termo = normalizar(estadoTr.busca);
+    var lista = transcricoesOrdenadas().filter(function (t) {
+      return !termo || [t.titulo, t.criador, t.transcricao, t.observacoes].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
+    });
+    if (!dados.transcricoes.length) { ul.innerHTML = '<li class="fraco" style="padding:8px;font-size:12px">Nenhum vídeo ainda.</li>'; return; }
+    if (!lista.length) { ul.innerHTML = '<li class="fraco" style="padding:8px;font-size:12px">Nada encontrado com essa busca.</li>'; return; }
+    ul.innerHTML = lista.map(function (t) {
+      var meta = [t.plataforma, t.criador, t.criado_em ? dataBR(isoDe(new Date(t.criado_em))).slice(0, 5) : ""].filter(Boolean).map(esc).join(" · ");
+      return '<li><button type="button" class="tr-item" data-id="' + esc(t.id) + '" aria-current="' + (t.id === estadoTr.sel) + '">' +
+        "<strong>" + esc(t.titulo || "(sem título)") + "</strong>" + tagExemplo(t) + "<small>" + meta + "</small></button></li>";
+    }).join("");
+  }
+
+  function desenharDetalheTr() {
+    var caixa = $("#tr-detalhe");
+    var t = acharPorId(dados.transcricoes, estadoTr.sel);
+    if (!t) {
+      caixa.innerHTML = '<p class="vazio">Clique em "Colar link de vídeo" para guardar o primeiro vídeo que você gostou. Aqui vai aparecer o vídeo, o roteiro transcrito e as suas observações.</p>';
+      return;
+    }
+    var info = infoDoLink(t.link);
+    var site = siteTranscricao();
+    var video = info.embed
+      ? '<iframe class="tr-quadro tr-' + info.formato + '" src="' + esc(info.embed) + '" title="Vídeo: ' + esc(t.titulo) + '" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>'
+      : '<p class="vazio">' + (t.link
+          ? "Esse link não dá para mostrar aqui dentro. Use o botão “Abrir original” para assistir."
+          : "Cole o link do vídeo no campo acima para ele aparecer aqui.") + "</p>";
+
+    caixa.innerHTML =
+      '<div class="cartao">' +
+        (t.exemplo ? '<div class="faixa faixa-alerta" style="margin-bottom:10px">Esta é a linha de exemplo, só para mostrar o formato. Pode apagar.</div>' : "") +
+        '<div class="tr-cabeca">' +
+          '<label class="visualmente-oculto" for="tr-titulo">Título</label>' +
+          '<input class="entrada tr-titulo" id="tr-titulo" value="' + esc(t.titulo) + '" placeholder="Dê um nome para este vídeo">' +
+          '<span class="fraco tr-status" id="tr-status" aria-live="polite">Salvo</span>' +
+        "</div>" +
+        '<div class="tr-meta">' +
+          (info.plataforma ? '<span class="pilula p-' + classe(info.plataforma) + '">' + esc(info.plataforma) + "</span>" : "") +
+          '<label class="visualmente-oculto" for="tr-link">Link do vídeo</label>' +
+          '<input class="entrada tr-link" id="tr-link" type="url" value="' + esc(t.link) + '" placeholder="Link do vídeo">' +
+          '<label class="visualmente-oculto" for="tr-criador">Quem fez</label>' +
+          '<input class="entrada tr-criador" id="tr-criador" value="' + esc(t.criador) + '" placeholder="@ de quem fez">' +
+        "</div>" +
+        '<div class="tr-meta">' +
+          (t.link ? '<a class="btn btn-linha" href="' + esc(t.link) + '" target="_blank" rel="noopener">' + icone("link") + "Abrir original</a>" : "") +
+          '<a class="btn btn-linha" id="tr-transcrever" href="' + esc(site) + '" target="_blank" rel="noopener" title="Copia o link do vídeo e abre o site de transcrição">' + icone("copiar") + "Copiar link e abrir transcrição</a>" +
+          '<button type="button" class="btn btn-fantasma" id="tr-trocar-site" title="Site atual: ' + esc(site) + '">trocar site</button>' +
+          '<span class="espaco" style="flex:1"></span>' +
+          '<button type="button" class="btn btn-perigo" id="tr-apagar">' + icone("lixo") + "Apagar</button>" +
+        "</div>" +
+      "</div>" +
+      '<div class="tr-corpo">' +
+        '<div class="cartao tr-video">' + video + "</div>" +
+        "<div>" +
+          '<div class="cartao"><div class="campo" style="margin:0"><label for="tr-transcricao">Roteiro (cole aqui a transcrição)</label>' +
+            '<textarea class="entrada tr-texto" id="tr-transcricao" placeholder="Clique em “Copiar link e abrir transcrição”, cole o link no site, copie o texto pronto e cole aqui.">' + esc(t.transcricao) + "</textarea></div>" +
+            '<p class="fraco" id="tr-conta" style="margin-top:6px;font-size:11.5px"></p></div>' +
+          '<div class="cartao"><div class="campo" style="margin:0"><label for="tr-obs">Observações</label>' +
+            '<textarea class="entrada tr-obs" id="tr-obs" placeholder="O gancho, por que funciona, o que dá pra adaptar pro seu conteúdo...">' + esc(t.observacoes) + "</textarea></div></div>" +
+        "</div>" +
+      "</div>";
+
+    var id = t.id;
+    function contar() {
+      var txt = $("#tr-transcricao").value.trim();
+      var n = txt ? txt.split(/\s+/).length : 0;
+      $("#tr-conta").textContent = n ? plural(n, "palavra", "palavras") + " · cerca de " + plural(Math.round(n / 2.5), "segundo", "segundos") + " falando" : "";
+    }
+    contar();
+    $("#tr-titulo").addEventListener("input", function () { agendarSalvarTr(id, "titulo", this.value); });
+    $("#tr-criador").addEventListener("input", function () { agendarSalvarTr(id, "criador", this.value); });
+    $("#tr-transcricao").addEventListener("input", function () { contar(); agendarSalvarTr(id, "transcricao", this.value); });
+    $("#tr-obs").addEventListener("input", function () { agendarSalvarTr(id, "observacoes", this.value); });
+    $("#tr-link").addEventListener("change", function () {
+      var novo = this.value.trim();
+      agendarSalvarTr(id, "link", novo);
+      agendarSalvarTr(id, "plataforma", infoDoLink(novo).plataforma);
+      salvarTranscricaoAgora();
+      desenharDetalheTr();
+    });
+    $("#tr-transcrever").addEventListener("click", function () {
+      var link = $("#tr-link").value.trim();
+      if (!link) return;
+      try {
+        navigator.clipboard.writeText(link).then(function () { avisoRapido("Link copiado. Cole no site de transcrição."); });
+      } catch (e) {}
+    });
+    $("#tr-trocar-site").addEventListener("click", function () {
+      var novo = prompt("Cole o endereço do site de transcrição que você usa:", siteTranscricao());
+      if (novo === null) return;
+      novo = novo.trim();
+      if (novo && !/^https?:\/\//i.test(novo)) novo = "https://" + novo;
+      try {
+        if (novo) localStorage.setItem(CHAVE_SITE_TRANSCRICAO, novo); else localStorage.removeItem(CHAVE_SITE_TRANSCRICAO);
+      } catch (e) {}
+      avisoRapido(novo ? "Site de transcrição trocado" : "Voltou para o site padrão");
+      desenharDetalheTr();
+    });
+    $("#tr-apagar").addEventListener("click", function () {
+      if (!confirm("Apagar “" + (t.titulo || "sem título") + "” com a transcrição e as observações? Isso não tem como desfazer.")) return;
+      pendenteTr = { id: null, campos: {} };
+      clearTimeout(timerTr);
+      apagar("transcricoes", id).then(function () {
+        tirarDaLista(dados.transcricoes, id);
+        estadoTr.sel = null;
+        avisoRapido("Apagado");
+        redesenhar();
+      }).catch(function (e) { avisoRapido(traduzirErro(e), true); });
+    });
+  }
+
+  function formularioTranscricao() {
+    abrirFormulario({
+      titulo: "Guardar vídeo",
+      valores: {},
+      nota: "Cole o link do YouTube, Instagram ou TikTok. Depois você cola a transcrição e escreve as observações.",
+      campos: [
+        { nome: "link", rotulo: "Link do vídeo", tipo: "url", obrigatorio: true, inteiro: true, dica: "https://www.instagram.com/reel/..." },
+        { nome: "titulo", rotulo: "Nome para lembrar", inteiro: true, dica: "ex: gancho de unboxing que prende" },
+        { nome: "criador", rotulo: "@ de quem fez", dica: "@perfil" }
+      ],
+      aoSalvar: function (val) {
+        val.plataforma = infoDoLink(val.link).plataforma;
+        if (!val.titulo) val.titulo = (val.plataforma ? "Vídeo do " + val.plataforma : "Vídeo") + (val.criador ? " de " + val.criador : "");
+        return gravar("transcricoes", val, null).then(function (linha) {
+          trocarNaLista(dados.transcricoes, linha);
+          estadoTr.sel = linha.id;
+          estadoTr.busca = "";
+        });
+      }
     });
   }
 })();

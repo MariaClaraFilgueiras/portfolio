@@ -372,3 +372,46 @@ dialog.janela::backdrop{background:rgba(36,20,22,.4)}
 .aviso-rapido.erro{background:var(--vermelho)}
 
 .carregando{padding:30px;text-align:center;color:var(--tinta-fraca)}
+
+/* =========================================================
+   TRANSCRIÇÕES
+   ========================================================= */
+.tr-grade{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start}
+.tr-lista{position:sticky;top:16px;display:flex;flex-direction:column;gap:10px;padding:12px;max-height:calc(100vh - 120px)}
+.tr-lista .busca input{width:100%}
+.tr-itens{overflow-y:auto;margin:0 -4px;display:grid;gap:2px}
+.tr-item{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;color:var(--tinta)}
+.tr-item:hover{background:var(--nude-claro)}
+.tr-item[aria-current="true"]{background:var(--vinho-suave)}
+.tr-item[aria-current="true"] strong{color:var(--vinho)}
+.tr-item strong{font-size:12.5px;font-weight:600}
+.tr-item small{display:block;font-size:11px;color:var(--tinta-suave);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-cabeca{display:flex;align-items:center;gap:10px}
+.tr-titulo{flex:1;font-size:15px;font-weight:600;border-color:transparent!important;background:transparent;padding-left:6px;margin-left:-6px}
+.tr-titulo:hover{border-color:var(--linha)!important}
+.tr-titulo:focus{border-color:var(--vinho)!important;background:var(--branco)}
+.tr-status{font-size:11.5px;white-space:nowrap}
+.tr-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.tr-link{flex:1 1 260px;min-width:0}
+.tr-criador{flex:0 1 180px;min-width:0}
+.tr-corpo{display:grid;grid-template-columns:minmax(240px,340px) minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+.tr-corpo > div > .cartao + .cartao{margin-top:16px}
+.tr-video{padding:10px}
+.tr-quadro{display:block;width:100%;border:0;border-radius:8px;background:var(--nude-claro)}
+.tr-vertical{aspect-ratio:9/16}
+.tr-horizontal{aspect-ratio:16/9}
+.tr-instagram{height:620px}
+.tr-texto{min-height:340px;line-height:1.6}
+.tr-obs{min-height:150px;line-height:1.6}
+.p-instagram{background:#f2dfe2;color:var(--vinho)}
+.p-youtube{background:var(--vermelho-fundo);color:var(--vermelho)}
+.p-tiktok{background:#e6e3e1;color:var(--tinta)}
+.p-outro{background:var(--nude-claro);color:var(--tinta-suave)}
+@media (max-width:1150px){
+  .tr-corpo{grid-template-columns:1fr}
+  .tr-video{max-width:360px;width:100%;justify-self:center}
+}
+@media (max-width:860px){
+  .tr-grade{grid-template-columns:1fr}
+  .tr-lista{position:static;max-height:300px}
+}
