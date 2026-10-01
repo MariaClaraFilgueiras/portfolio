@@ -426,3 +426,17 @@ dialog.janela::backdrop{background:rgba(36,20,22,.4)}
 .dica-arquivo{margin-top:14px;font-size:12.5px}
 .dica-arquivo summary{cursor:pointer;color:var(--vinho);font-weight:600}
 .dica-arquivo p{margin-top:6px;color:var(--tinta-suave)}
+dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
+.previa-planilha{max-height:min(460px,55vh);overflow:auto}
+.previa-planilha thead th{position:sticky;top:0;z-index:1}
+.previa-planilha td{vertical-align:top;font-size:12px}
+.previa-planilha .obs-import{min-width:220px;max-width:340px;color:var(--tinta-suave)}
+.previa-planilha input[type=checkbox]{width:15px;height:15px;accent-color:var(--vinho);cursor:pointer}
+.previa-planilha tr.fora td{opacity:.45}
+.previa-planilha tr.fora td:first-child{opacity:1}
+.faixa-previa{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;margin-bottom:12px;border-radius:var(--raio);background:var(--branco);border:1px solid var(--linha);box-shadow:inset 3px 0 0 var(--vinho)}
+.faixa-previa .miolo{flex:1 1 280px;min-width:0}
+.faixa-previa strong{display:block;font-size:13.5px}
+.faixa-previa small{display:block;font-size:12px;color:var(--tinta-suave);margin-top:2px}
+.faixa-previa small b{color:var(--vinho)}
+.aba .previa-planilha{max-height:calc(100vh - 230px);min-height:240px}

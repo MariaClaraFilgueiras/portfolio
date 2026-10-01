@@ -744,6 +744,8 @@
   var estadoMarcas = { busca: "", situacao: "todas" };
 
   function desenharMarcas(painel) {
+    // Enquanto há uma planilha esperando confirmação, a aba mostra a prévia dela
+    if (importacao && importacao.ativa) { desenharPreviaImport(painel); return; }
     var conta = { todas: dados.marcas.length };
     SITUACOES.forEach(function (s) { conta[s] = 0; });
     dados.marcas.forEach(function (m) { if (conta[m.situacao] != null) conta[m.situacao]++; });
@@ -1007,8 +1009,8 @@
 
   function montarLinhas() {
     var imp = importacao, saida = [];
-    imp.corpo.forEach(function (l) {
-      var r = { nome: "", instagram: "", email: "", telefone: "", situacao: "Lead", obs: "", ultimo_contato: null }, extras = [], sitOriginal = "";
+    imp.corpo.forEach(function (l, li) {
+      var r = { _i: li, nome: "", instagram: "", email: "", telefone: "", situacao: "Lead", obs: "", ultimo_contato: null }, extras = [], sitOriginal = "";
       imp.mapa.forEach(function (campo, ci) {
         var v = String(l[ci] == null ? "" : l[ci]).trim();
         if (!v || !campo) return;
@@ -1016,7 +1018,11 @@
         else if (campo === "situacao") { sitOriginal = v; r.situacao = situacaoDe(v); }
         else if (campo === "ultimo_contato") r.ultimo_contato = dataDeTexto(v);
         else if (campo === "instagram") r.instagram = "@" + arroba(v);
-        else if (campo === "email") r.email = v.toLowerCase();
+        else if (campo === "email") {
+          // "não divulgado (usar whatsapp)" não é e-mail: guarda na observação
+          if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) r.email = v.toLowerCase();
+          else extras.push("E-mail: " + v);
+        }
         else if (campo === "obs") r.obs = r.obs ? r.obs + " " + v : v;
         else r[campo] = r[campo] ? r[campo] + " " + v : v;
       });
@@ -1078,8 +1084,10 @@
       var corpo = linhas.slice(ih + 1);
       var largura = Math.max.apply(null, linhas.map(function (l) { return l.length; }));
       while (cabecalho.length < largura) cabecalho.push("");
-      importacao = { arquivo: arquivo.name, aba: lido.aba, cabecalho: cabecalho, corpo: corpo, mapa: adivinharColunas(cabecalho, corpo), pularRepetidas: true };
-      telaConferir();
+      importacao = { arquivo: arquivo.name, aba: lido.aba, cabecalho: cabecalho, corpo: corpo, mapa: adivinharColunas(cabecalho, corpo), pularRepetidas: true, escolha: {}, ativa: true };
+      janela.close();
+      if (abaAtual !== "marcas") location.hash = "#marcas"; else redesenhar();
+      window.scrollTo(0, 0);
     } catch (e) {
       console.error(e);
       erro.textContent = (e && e.amigavel) || "Não consegui ler esse arquivo. Tente salvar a planilha como CSV UTF-8 e escolher de novo.";
@@ -1089,64 +1097,128 @@
     }
   }
 
-  function telaConferir() {
+  function linhaEntra(r) {
+    var imp = importacao;
+    return r._i in imp.escolha ? imp.escolha[r._i] : !(imp.pularRepetidas && r._repetida);
+  }
+
+  // A prévia da planilha ocupa a aba Marcas até você importar ou cancelar
+  function desenharPreviaImport(painel) {
     var imp = importacao;
     var linhas = montarLinhas();
-    var novas = linhas.filter(function (r) { return !r._repetida; });
-    var repetidas = linhas.length - novas.length;
-    var vaiEntrar = imp.pularRepetidas ? novas : linhas;
+    var repetidas = linhas.filter(function (r) { return r._repetida; }).length;
     var temNome = imp.mapa.indexOf("nome") >= 0;
 
-    var colunas = imp.cabecalho.map(function (h, ci) {
-      var exemplo = "";
-      for (var i = 0; i < imp.corpo.length && !exemplo; i++) exemplo = String(imp.corpo[i][ci] || "").trim();
-      return "<tr><td><strong>" + esc(h || "Coluna " + (ci + 1)) + '</strong><small class="fraco" style="display:block">' + esc(exemplo.slice(0, 40)) + "</small></td>" +
-        '<td><select class="entrada" data-ci="' + ci + '">' + CAMPOS_IMPORT.map(function (c) {
-          return '<option value="' + c[0] + '"' + (imp.mapa[ci] === c[0] ? " selected" : "") + ">" + c[1] + "</option>";
-        }).join("") + "</select></td></tr>";
+    var planilha = linhas.map(function (r, n) {
+      var sim = linhaEntra(r);
+      return '<tr data-i="' + r._i + '" class="' + (sim ? "" : "fora") + '">' +
+        '<td class="curto"><input type="checkbox" class="entra-linha" aria-label="Importar ' + esc(r.nome) + '"' + (sim ? " checked" : "") + "></td>" +
+        '<td class="num fraco">' + (n + 1) + "</td>" +
+        "<td><strong>" + esc(r.nome) + "</strong>" + (r._repetida ? '<span class="tag-exemplo">já existe</span>' : "") + "</td>" +
+        "<td>" + esc(r.instagram) + "</td>" +
+        "<td>" + esc(r.email) + "</td>" +
+        '<td class="curto">' + esc(r.telefone) + "</td>" +
+        '<td><span class="pilula p-' + classe(r.situacao) + '">' + esc(r.situacao) + "</span></td>" +
+        '<td class="curto">' + dataBR(r.ultimo_contato) + "</td>" +
+        '<td class="obs-import">' + esc(r.obs) + "</td></tr>";
     }).join("");
 
-    var previa = vaiEntrar.slice(0, 5).map(function (r) {
-      return "<tr><td><strong>" + esc(r.nome) + "</strong>" + (r._repetida ? '<span class="tag-exemplo">já existe</span>' : "") + "</td><td>" + esc(r.instagram) + "</td><td>" + esc(r.email) + "</td><td>" + esc(r.telefone) +
-        '</td><td><span class="pilula p-' + classe(r.situacao) + '">' + esc(r.situacao) + "</span></td></tr>";
-    }).join("");
+    painel.innerHTML =
+      '<div class="faixa-previa">' +
+        '<div class="miolo"><strong>Prévia da planilha ' + esc(imp.arquivo) + "</strong>" +
+          "<small>" + (imp.aba ? "Aba " + esc(imp.aba) + " · " : "") + plural(linhas.length, "marca encontrada", "marcas encontradas") +
+          ' · <b id="conta-import"></b>. Nada foi gravado ainda.</small></div>' +
+        '<button type="button" class="btn btn-linha" id="ajustar-colunas">' + icone("editar") + "Ajustar colunas</button>" +
+        '<button type="button" class="btn btn-linha" id="cancelar-import">Cancelar</button>' +
+        '<button type="button" class="btn btn-vinho" id="confirmar-import">' + icone("subir") + "<span></span></button>" +
+      "</div>" +
+      (!temNome ? '<div class="faixa faixa-alerta" style="margin-bottom:12px">Nenhuma coluna está marcada como "Marca". Clique em "Ajustar colunas" e escolha qual coluna tem o nome da marca.</div>' : "") +
+      '<div class="faixa faixa-erro" id="erro-import"' + (imp.erro ? "" : " hidden") + ' style="margin-bottom:12px">' + esc(imp.erro || "") + "</div>" +
+      (repetidas ? '<div class="campo campo-check" style="margin-bottom:10px"><input type="checkbox" id="pular-repetidas"' + (imp.pularRepetidas ? " checked" : "") + '><label for="pular-repetidas">Pular ' + plural(repetidas, "marca que já está", "marcas que já estão") + " na base ou repetida na planilha (mesmo e-mail, @ ou nome)</label></div>" : "") +
+      (linhas.length
+        ? '<div class="tabela-caixa previa-planilha"><table class="tabela"><thead><tr>' +
+            '<th class="curto"><input type="checkbox" id="todas-linhas" aria-label="Marcar ou desmarcar todas"></th><th class="num">#</th>' +
+            "<th>Marca</th><th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Último contato</th><th>Observação</th>" +
+          '</tr></thead><tbody id="linhas-import">' + planilha + "</tbody></table></div>"
+        : '<p class="vazio">Não encontrei nenhuma marca com essas colunas. Clique em "Ajustar colunas" para conferir.</p>') +
+      '<p class="fraco" style="font-size:11.5px;margin-top:8px">Desmarque a caixinha de quem você não quer trazer. Quem não tiver situação na planilha entra como Lead. As colunas em "Juntar na observação" vão para o campo Observação.</p>';
 
-    janela.querySelector(".janela-corpo").innerHTML =
-      '<p class="suave" style="margin-bottom:12px">Arquivo <b>' + esc(imp.arquivo) + "</b>" + (imp.aba ? " (aba " + esc(imp.aba) + ")" : "") + ": " +
-        plural(linhas.length, "lead encontrado", "leads encontrados") + ". <button type=\"button\" class=\"link-botao\" id=\"trocar-arquivo\">Escolher outro arquivo</button></p>" +
-      (!temNome ? '<div class="faixa faixa-alerta" style="margin-bottom:12px">Nenhuma coluna está marcada como "Marca". Escolha abaixo qual coluna tem o nome da marca.</div>' : "") +
-      '<h3 style="margin-bottom:6px">1. Confira as colunas</h3>' +
-      '<p class="fraco" style="margin-bottom:8px;font-size:12px">Já deixei marcado o que eu reconheci. Se algo estiver errado, troque na lista.</p>' +
-      '<div class="tabela-caixa" style="margin-bottom:16px"><table class="tabela"><thead><tr><th>Coluna da sua planilha</th><th>Vai para</th></tr></thead><tbody id="mapa-import">' + colunas + "</tbody></table></div>" +
-      '<h3 style="margin-bottom:6px">2. Veja como vai ficar</h3>' +
-      (previa
-        ? '<div class="tabela-caixa"><table class="tabela"><thead><tr><th>Marca</th><th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th></tr></thead><tbody>' + previa + "</tbody></table></div>" +
-          (vaiEntrar.length > 5 ? '<p class="fraco" style="font-size:11.5px;margin-top:6px">Mostrando 5 de ' + vaiEntrar.length + ".</p>" : "")
-        : '<p class="vazio">Nenhum lead novo para importar.</p>') +
-      (repetidas ? '<div class="campo campo-check" style="margin-top:12px"><input type="checkbox" id="pular-repetidas"' + (imp.pularRepetidas ? " checked" : "") + '><label for="pular-repetidas">Pular ' + plural(repetidas, "marca que já está", "marcas que já estão") + " na base ou repetida na planilha (mesmo e-mail, @ ou nome)</label></div>" : "") +
-      '<p class="fraco" style="font-size:11.5px;margin-top:10px">Quem não tiver situação na planilha entra como Lead. As colunas em "Juntar na observação" vão para o campo Observação.</p>' +
-      '<div class="faixa faixa-erro" id="erro-import" hidden style="margin-top:12px"></div>';
+    // Atualiza contagem e botão sem redesenhar a tabela (não perde a rolagem)
+    function atualizarContagem() {
+      var vao = linhas.filter(linhaEntra).length;
+      $("#conta-import").textContent = vao + " de " + linhas.length + " vão entrar";
+      var botao = $("#confirmar-import");
+      $("span", botao).textContent = "Importar " + plural(vao, "marca", "marcas");
+      botao.disabled = !vao || !temNome;
+      var todas = $("#todas-linhas");
+      if (todas) { todas.checked = vao === linhas.length; todas.indeterminate = vao > 0 && vao < linhas.length; }
+    }
+    atualizarContagem();
 
-    janela.querySelector(".janela-rodape").innerHTML = '<span class="espaco"></span><button type="button" class="btn btn-linha" data-fechar>Cancelar</button>' +
-      '<button type="button" class="btn btn-vinho" id="confirmar-import"' + (!vaiEntrar.length || !temNome ? " disabled" : "") + ">" + icone("subir") + "Importar " + plural(vaiEntrar.length, "marca", "marcas") + "</button>";
+    var corpoLinhas = $("#linhas-import");
+    if (corpoLinhas) corpoLinhas.addEventListener("change", function (e) {
+      var cx = e.target.closest(".entra-linha"); if (!cx) return;
+      var tr = cx.closest("tr");
+      imp.escolha[+tr.getAttribute("data-i")] = cx.checked;
+      tr.classList.toggle("fora", !cx.checked);
+      atualizarContagem();
+    });
+    var todas = $("#todas-linhas");
+    if (todas) todas.addEventListener("change", function () {
+      linhas.forEach(function (r) { imp.escolha[r._i] = todas.checked; });
+      $$(".entra-linha", corpoLinhas).forEach(function (cx) { cx.checked = todas.checked; cx.closest("tr").classList.toggle("fora", !todas.checked); });
+      atualizarContagem();
+    });
+    var cxRep = $("#pular-repetidas");
+    if (cxRep) cxRep.addEventListener("change", function () {
+      imp.pularRepetidas = cxRep.checked;
+      linhas.forEach(function (r) { if (r._repetida) delete imp.escolha[r._i]; });
+      redesenhar();
+    });
+    $("#ajustar-colunas").addEventListener("click", abrirMapaColunas);
+    $("#cancelar-import").addEventListener("click", function () {
+      if (!confirm("Cancelar a importação? Nada da planilha vai ser gravado.")) return;
+      importacao = null;
+      redesenhar();
+    });
+    $("#confirmar-import").addEventListener("click", function () {
+      var escolhidas = linhas.filter(linhaEntra);
+      gravarImportacao(escolhidas, linhas.length - escolhidas.length);
+    });
+  }
 
+  // Janela para trocar qual coluna da planilha vai para qual campo
+  function abrirMapaColunas() {
+    var imp = importacao;
+    function linhasMapa() {
+      return imp.cabecalho.map(function (h, ci) {
+        var exemplo = "";
+        for (var i = 0; i < imp.corpo.length && !exemplo; i++) exemplo = String(imp.corpo[i][ci] || "").trim();
+        return "<tr><td><strong>" + esc(h || "Coluna " + (ci + 1)) + '</strong><small class="fraco" style="display:block">' + esc(exemplo.slice(0, 40)) + "</small></td>" +
+          '<td><select class="entrada" data-ci="' + ci + '">' + CAMPOS_IMPORT.map(function (c) {
+            return '<option value="' + c[0] + '"' + (imp.mapa[ci] === c[0] ? " selected" : "") + ">" + c[1] + "</option>";
+          }).join("") + "</select></td></tr>";
+      }).join("");
+    }
+    abrirJanela(cabecaJanela("Ajustar colunas") +
+      '<div class="janela-corpo"><p class="fraco" style="margin-bottom:10px;font-size:12px">Já deixei marcado o que eu reconheci. Troque o que estiver errado: a prévia na aba muda na hora.</p>' +
+      '<div class="tabela-caixa"><table class="tabela"><thead><tr><th>Coluna da sua planilha</th><th>Vai para</th></tr></thead><tbody id="mapa-import">' + linhasMapa() + "</tbody></table></div></div>" +
+      '<div class="janela-rodape"><span class="espaco"></span><button type="button" class="btn btn-vinho" data-fechar>Pronto</button></div>');
     $("#mapa-import").addEventListener("change", function (e) {
       var sel = e.target.closest("select"); if (!sel) return;
       var ci = +sel.getAttribute("data-ci"), campo = sel.value;
       // Cada campo só pode vir de uma coluna (menos "juntar na observação")
       if (campo && campo !== "_obs") imp.mapa.forEach(function (c, i) { if (c === campo && i !== ci) imp.mapa[i] = "_obs"; });
       imp.mapa[ci] = campo;
-      telaConferir();
+      $("#mapa-import").innerHTML = linhasMapa();
+      redesenhar();
     });
-    var cx = $("#pular-repetidas");
-    if (cx) cx.addEventListener("change", function () { imp.pularRepetidas = cx.checked; telaConferir(); });
-    $("#trocar-arquivo").addEventListener("click", abrirImportacao);
-    $("#confirmar-import").addEventListener("click", function () { gravarImportacao(vaiEntrar, imp.pularRepetidas ? repetidas : 0); });
   }
 
   async function gravarImportacao(linhas, puladas) {
-    var botao = $("#confirmar-import"), erro = $("#erro-import");
+    var botao = $("#confirmar-import");
     botao.disabled = true;
+    importacao.erro = "";
     var gravadas = 0, falhou = null;
     for (var i = 0; i < linhas.length; i += 100) {
       botao.textContent = "Importando " + Math.min(i + 100, linhas.length) + " de " + linhas.length + "...";
@@ -1163,19 +1235,17 @@
         falhou = res.error; break;
       }
       (res.data || []).forEach(function (m) { dados.marcas.push(m); });
+      linhas.slice(i, i + 100).forEach(function (r) { importacao.escolha[r._i] = false; });
       gravadas += (res.data || []).length;
     }
     if (falhou) {
       console.error(falhou);
-      erro.textContent = (gravadas ? plural(gravadas, "marca foi importada", "marcas foram importadas") + ", mas o resto parou no meio. " : "") + traduzirErro(falhou);
-      erro.hidden = false;
-      botao.textContent = "Tentar de novo";
-      botao.disabled = false;
+      importacao.erro = (gravadas ? plural(gravadas, "marca foi importada", "marcas foram importadas") + ", mas o resto parou no meio. As que já entraram foram desmarcadas. " : "") + traduzirErro(falhou);
       redesenhar();
       return;
     }
-    janela.close();
-    avisoRapido(plural(gravadas, "marca importada", "marcas importadas") + (puladas ? ". " + plural(puladas, "pulada porque já existia", "puladas porque já existiam") : ""));
+    importacao = null;
+    avisoRapido(plural(gravadas, "marca importada", "marcas importadas") + (puladas ? ". " + plural(puladas, "ficou de fora", "ficaram de fora") : ""));
     estadoMarcas.situacao = "todas";
     estadoMarcas.busca = "";
     redesenhar();
