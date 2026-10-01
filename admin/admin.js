@@ -757,6 +757,7 @@
           SITUACOES.map(function (s) { return chip(s, s, conta[s], estadoMarcas.situacao, CORES_SITUACAO[s]); }).join("") +
         "</div>" +
         '<span class="espaco"></span>' +
+        '<button class="btn btn-linha" type="button" id="importar-marcas">' + icone("subir") + "Importar planilha</button>" +
         '<button class="btn btn-linha" type="button" id="csv-marcas">' + icone("baixar") + "Baixar CSV</button>" +
         '<button class="btn btn-vinho" type="button" id="nova-marca">' + icone("mais") + "Adicionar marca</button>" +
       "</div>" +
@@ -770,11 +771,12 @@
       desenharTabelaMarcas();
     });
     $("#nova-marca").addEventListener("click", function () { formularioMarca(null); });
+    $("#importar-marcas").addEventListener("click", abrirImportacao);
     $("#csv-marcas").addEventListener("click", function () {
       baixarCSV("marcas", ["Marca", "Instagram", "E-mail", "Telefone", "Situação", "Observação", "Último contato", "Veio de", "Cadastrada em"],
         marcasOrdenadas().map(function (m) {
           return [m.nome, m.instagram ? "@" + arroba(m.instagram) : "", m.email, m.telefone, m.situacao, m.obs,
-            dataBR(m.ultimo_contato), m.origem === "site" ? "Formulário do site" : "Painel", m.criado_em ? dataBR(isoDe(new Date(m.criado_em))) : ""];
+            dataBR(m.ultimo_contato), m.origem === "site" ? "Formulário do site" : m.origem === "planilha" ? "Planilha importada" : "Painel", m.criado_em ? dataBR(isoDe(new Date(m.criado_em))) : ""];
         }));
     });
     desenharTabelaMarcas();
@@ -809,7 +811,7 @@
       lista.map(function (m) {
         var h = arroba(m.instagram), w = linkWhats(m.telefone);
         return '<tr class="clicavel" data-id="' + esc(m.id) + '" tabindex="0">' +
-          "<td><strong>" + esc(m.nome || "(sem nome)") + "</strong>" + tagExemplo(m) + (m.origem === "site" ? '<span class="tag-site">site</span>' : "") + "</td>" +
+          "<td><strong>" + esc(m.nome || "(sem nome)") + "</strong>" + tagExemplo(m) + (m.origem === "site" ? '<span class="tag-site">site</span>' : "") + (m.origem === "planilha" ? '<span class="tag-site">planilha</span>' : "") + "</td>" +
           "<td>" + (h ? '<a href="https://www.instagram.com/' + encodeURIComponent(h) + '/" target="_blank" rel="noopener">@' + esc(h) + "</a>" : "") + "</td>" +
           "<td>" + (m.email ? '<a href="mailto:' + esc(m.email) + '">' + esc(m.email) + "</a>" : "") + "</td>" +
           '<td class="curto">' + esc(m.telefone) + "</td>" +
@@ -851,6 +853,332 @@
       },
       aoApagar: m ? function () { return apagar("marcas", m.id).then(function () { tirarDaLista(dados.marcas, m.id); }); } : null
     });
+  }
+
+
+  /* =========================================================
+     IMPORTAR PLANILHA DE MARCAS (CSV ou Excel)
+     Lê o arquivo aqui mesmo no navegador, descobre as colunas,
+     mostra a prévia e só grava quando você confirma.
+     ========================================================= */
+  var CAMPOS_IMPORT = [
+    ["nome", "Marca"], ["instagram", "Instagram"], ["email", "E-mail"], ["telefone", "Telefone"],
+    ["situacao", "Situação"], ["obs", "Observação"], ["ultimo_contato", "Último contato"],
+    ["_obs", "Juntar na observação"], ["", "Não importar"]
+  ];
+  // Nome da coluna na planilha que indica cada campo (na ordem de prioridade)
+  var PISTAS_COLUNA = [
+    ["email", /e-?mail|^mail/],
+    ["instagram", /insta|^ig$|arroba|^@|perfil/],
+    ["telefone", /telefone|celular|whats|^fone|^tel\b|^tel$|zap|wpp/],
+    ["situacao", /situac|status|etapa|fase|estagio/],
+    ["ultimo_contato", /ultimo|data/],
+    ["obs", /^obs|observ|^nota|anotac|coment|detalhe/],
+    ["nome", /marca|empresa|brand|loja|cliente|fantasia|razao|companhia|^nome$|^nome /],
+    ["_obs", /contato|responsavel|pessoa|cidade|estado|nicho|segmento|site|cargo/]
+  ];
+  var LIMITES_MARCA = { nome: 200, instagram: 200, email: 200, telefone: 50, obs: 5000 };
+  var importacao = null;
+
+  function carregarScript(url) {
+    return new Promise(function (ok, falha) {
+      var sc = document.createElement("script");
+      sc.src = url; sc.onload = ok;
+      sc.onerror = function () { falha(new Error("não carregou")); };
+      document.head.appendChild(sc);
+    });
+  }
+
+  // Lê CSV com ; , ou tab, aspas e acentos (UTF-8 ou o padrão antigo do Excel)
+  function decodificar(buf) {
+    try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+    catch (e) { return new TextDecoder("windows-1252").decode(buf); }
+  }
+  function lerCSV(texto) {
+    texto = texto.replace(/^﻿/, "");
+    var sep = null, m = texto.match(/^sep=(.)\r?\n/i);
+    if (m) { sep = m[1]; texto = texto.slice(m[0].length); }
+    if (!sep) {
+      var amostra = texto.split(/\r?\n/).slice(0, 5).join("\n").replace(/"[^"]*"/g, "");
+      var conta = { ";": (amostra.match(/;/g) || []).length, ",": (amostra.match(/,/g) || []).length, "\t": (amostra.match(/\t/g) || []).length };
+      sep = Object.keys(conta).sort(function (a, b) { return conta[b] - conta[a]; })[0];
+    }
+    var linhas = [], linha = [], celula = "", aspas = false;
+    for (var i = 0; i < texto.length; i++) {
+      var c = texto[i];
+      if (aspas) {
+        if (c === '"') { if (texto[i + 1] === '"') { celula += '"'; i++; } else aspas = false; }
+        else celula += c;
+      } else if (c === '"') aspas = true;
+      else if (c === sep) { linha.push(celula); celula = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && texto[i + 1] === "\n") i++;
+        linha.push(celula); linhas.push(linha); linha = []; celula = "";
+      } else celula += c;
+    }
+    if (celula || linha.length) { linha.push(celula); linhas.push(linha); }
+    return linhas;
+  }
+
+  async function lerArquivo(arquivo) {
+    var nome = arquivo.name.toLowerCase();
+    if (/\.pdf$/.test(nome)) throw { amigavel: "PDF não guarda as colunas da planilha, então o painel não consegue separar marca, e-mail e telefone. Abra a planilha original e salve como CSV ou Excel (veja como logo abaixo)." };
+    var buf = await arquivo.arrayBuffer();
+    if (/\.(xlsx|xlsm|xls|ods)$/.test(nome)) {
+      if (!window.XLSX) {
+        try { await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"); }
+        catch (e) { throw { amigavel: "Não consegui carregar o leitor de Excel. Confira a internet ou salve a planilha como CSV." }; }
+      }
+      var livro = window.XLSX.read(buf, { type: "array", cellDates: true });
+      for (var i = 0; i < livro.SheetNames.length; i++) {
+        var linhas = window.XLSX.utils.sheet_to_json(livro.Sheets[livro.SheetNames[i]], { header: 1, raw: true, defval: "" });
+        if (linhas.some(function (l) { return l.some(function (c) { return String(c).trim(); }); })) {
+          return { linhas: linhas.map(function (l) { return l.map(celulaTexto); }), aba: livro.SheetNames[i] };
+        }
+      }
+      return { linhas: [] };
+    }
+    return { linhas: lerCSV(decodificar(buf)) };
+  }
+  function celulaTexto(c) {
+    if (c instanceof Date) return isNaN(c) ? "" : isoDe(new Date(c.getTime() + 12 * 3600 * 1000));
+    if (typeof c === "number") return Number.isInteger(c) ? String(c) : String(c).replace(".", ",");
+    return String(c == null ? "" : c).trim();
+  }
+
+  function adivinharColunas(cabecalho, corpo) {
+    var usados = {};
+    var mapa = cabecalho.map(function (h) {
+      var n = normalizar(h);
+      if (!n) return "";
+      for (var i = 0; i < PISTAS_COLUNA.length; i++) {
+        var campo = PISTAS_COLUNA[i][0];
+        if (PISTAS_COLUNA[i][1].test(n) && (campo === "_obs" || !usados[campo])) { if (campo !== "_obs") usados[campo] = true; return campo; }
+      }
+      return "_obs";
+    });
+    // Coluna sem nome reconhecido: olha o conteúdo
+    mapa.forEach(function (campo, ci) {
+      if (campo && campo !== "_obs") return;
+      var vals = corpo.map(function (l) { return String(l[ci] || "").trim(); }).filter(Boolean).slice(0, 30);
+      if (!vals.length) return;
+      function maioria(re) { return vals.filter(function (v) { return re.test(v); }).length / vals.length > 0.6; }
+      var palpite = maioria(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? "email"
+        : maioria(/^@|instagram\.com\//i) ? "instagram"
+        : maioria(/^[\d\s()+.-]{10,}$/) ? "telefone" : null;
+      if (palpite && !usados[palpite]) { usados[palpite] = true; mapa[ci] = palpite; }
+    });
+    if (!usados.nome) {
+      var livre = mapa.indexOf("_obs");
+      if (livre >= 0) mapa[livre] = "nome";
+    }
+    return mapa;
+  }
+
+  // Acha a linha do cabeçalho (às vezes a planilha tem um título em cima)
+  function acharCabecalho(linhas) {
+    var melhor = 0, pontos = -1;
+    for (var i = 0; i < Math.min(linhas.length, 10); i++) {
+      var p = 0;
+      linhas[i].forEach(function (h) { var n = normalizar(h); if (n && PISTAS_COLUNA.some(function (x) { return x[0] !== "_obs" && x[1].test(n); })) p++; });
+      if (p > pontos) { pontos = p; melhor = i; }
+    }
+    return melhor;
+  }
+
+  function situacaoDe(t) {
+    var n = normalizar(t);
+    if (!n) return "Lead";
+    if (/cliente|fech|ganh|ativ|contrat/.test(n)) return "Cliente";
+    if (/convers|negoci|andamento|proposta|em contato|respond|retorn/.test(n)) return "Conversando";
+    if (/parad|perdid|pausad|inativ|sem resposta|nao |^nao$|desist|recus/.test(n)) return "Parada";
+    return "Lead";
+  }
+  function dataDeTexto(t) {
+    t = String(t || "").trim();
+    var m;
+    if ((m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1] + "-" + doisDigitos(+m[2]) + "-" + doisDigitos(+m[3]);
+    if ((m = t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/))) {
+      var ano = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+      if (+m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31) return ano + "-" + doisDigitos(+m[2]) + "-" + doisDigitos(+m[1]);
+    }
+    return null;
+  }
+
+  function montarLinhas() {
+    var imp = importacao, saida = [];
+    imp.corpo.forEach(function (l) {
+      var r = { nome: "", instagram: "", email: "", telefone: "", situacao: "Lead", obs: "", ultimo_contato: null }, extras = [], sitOriginal = "";
+      imp.mapa.forEach(function (campo, ci) {
+        var v = String(l[ci] == null ? "" : l[ci]).trim();
+        if (!v || !campo) return;
+        if (campo === "_obs") extras.push((imp.cabecalho[ci] || "Coluna " + (ci + 1)) + ": " + v);
+        else if (campo === "situacao") { sitOriginal = v; r.situacao = situacaoDe(v); }
+        else if (campo === "ultimo_contato") r.ultimo_contato = dataDeTexto(v);
+        else if (campo === "instagram") r.instagram = "@" + arroba(v);
+        else if (campo === "email") r.email = v.toLowerCase();
+        else if (campo === "obs") r.obs = r.obs ? r.obs + " " + v : v;
+        else r[campo] = r[campo] ? r[campo] + " " + v : v;
+      });
+      if (sitOriginal && normalizar(sitOriginal) !== normalizar(r.situacao)) extras.push("Situação na planilha: " + sitOriginal);
+      if (extras.length) r.obs = [r.obs].concat(extras).filter(Boolean).join(" · ");
+      if (r.instagram === "@") r.instagram = "";
+      if (!r.nome) r.nome = r.instagram || r.email || "";
+      if (!r.nome) return; // linha vazia
+      Object.keys(LIMITES_MARCA).forEach(function (k) { r[k] = String(r[k] || "").slice(0, LIMITES_MARCA[k]); });
+      saida.push(r);
+    });
+    // Quem já está na base (ou repetido na própria planilha)
+    var vistos = { e: {}, i: {}, n: {} };
+    function marcar(m) {
+      if (m.email) vistos.e[normalizar(m.email)] = true;
+      if (arroba(m.instagram)) vistos.i[normalizar(arroba(m.instagram))] = true;
+      if (m.nome) vistos.n[normalizar(m.nome)] = true;
+    }
+    function repetido(m) {
+      return (m.email && vistos.e[normalizar(m.email)]) || (arroba(m.instagram) && vistos.i[normalizar(arroba(m.instagram))]) || (m.nome && vistos.n[normalizar(m.nome)]);
+    }
+    dados.marcas.forEach(function (m) { if (!m.exemplo) marcar(m); });
+    saida.forEach(function (r) { r._repetida = !!repetido(r); marcar(r); });
+    return saida;
+  }
+
+  function abrirImportacao() {
+    importacao = null;
+    abrirJanela(cabecaJanela("Importar planilha de marcas") +
+      '<div class="janela-corpo">' +
+        '<p class="suave" style="margin-bottom:12px">Escolha a sua planilha em <b>CSV</b> ou <b>Excel</b> (.xlsx). Nada é gravado antes de você conferir a prévia.</p>' +
+        '<div class="faixa faixa-erro" id="erro-import" hidden></div>' +
+        '<label class="soltar" id="soltar"><input type="file" id="arquivo-import" accept=".csv,.txt,.xlsx,.xls,.xlsm,.ods,.pdf" class="visualmente-oculto">' +
+          icone("subir") + "<strong>Clique para escolher o arquivo</strong><small>ou arraste ele até aqui</small></label>" +
+        '<details class="dica-arquivo"><summary>Minha planilha está em PDF. Como faço?</summary>' +
+          "<p><b>Excel:</b> abra a planilha, vá em Arquivo, Salvar como, e escolha <b>CSV UTF-8</b>. Ou só envie o próprio arquivo .xlsx.</p>" +
+          "<p><b>Google Planilhas:</b> Arquivo, Fazer download, <b>Valores separados por vírgula (.csv)</b>.</p>" +
+          "<p><b>Numbers (Mac):</b> Arquivo, Exportar para, <b>CSV</b>.</p></details>" +
+      "</div>" +
+      '<div class="janela-rodape"><span class="espaco"></span><button type="button" class="btn btn-linha" data-fechar>Cancelar</button></div>', true);
+
+    var input = $("#arquivo-import"), zona = $("#soltar");
+    input.addEventListener("change", function () { if (input.files[0]) processarArquivo(input.files[0]); });
+    ["dragenter", "dragover"].forEach(function (ev) { zona.addEventListener(ev, function (e) { e.preventDefault(); zona.classList.add("em-cima"); }); });
+    ["dragleave", "drop"].forEach(function (ev) { zona.addEventListener(ev, function () { zona.classList.remove("em-cima"); }); });
+    zona.addEventListener("drop", function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) processarArquivo(e.dataTransfer.files[0]); });
+  }
+
+  async function processarArquivo(arquivo) {
+    var erro = $("#erro-import");
+    erro.hidden = true;
+    $("#soltar strong").textContent = "Lendo " + arquivo.name + "...";
+    try {
+      var lido = await lerArquivo(arquivo);
+      var linhas = lido.linhas.filter(function (l) { return l.some(function (c) { return String(c).trim(); }); });
+      if (linhas.length < 2) throw { amigavel: "Não encontrei leads nesse arquivo. Confira se ele tem uma linha de títulos (Marca, E-mail...) e as marcas embaixo." };
+      var ih = acharCabecalho(linhas);
+      var cabecalho = linhas[ih].map(function (h) { return String(h).trim(); });
+      var corpo = linhas.slice(ih + 1);
+      var largura = Math.max.apply(null, linhas.map(function (l) { return l.length; }));
+      while (cabecalho.length < largura) cabecalho.push("");
+      importacao = { arquivo: arquivo.name, aba: lido.aba, cabecalho: cabecalho, corpo: corpo, mapa: adivinharColunas(cabecalho, corpo), pularRepetidas: true };
+      telaConferir();
+    } catch (e) {
+      console.error(e);
+      erro.textContent = (e && e.amigavel) || "Não consegui ler esse arquivo. Tente salvar a planilha como CSV UTF-8 e escolher de novo.";
+      erro.hidden = false;
+      $("#soltar strong").textContent = "Clique para escolher o arquivo";
+      $("#arquivo-import").value = "";
+    }
+  }
+
+  function telaConferir() {
+    var imp = importacao;
+    var linhas = montarLinhas();
+    var novas = linhas.filter(function (r) { return !r._repetida; });
+    var repetidas = linhas.length - novas.length;
+    var vaiEntrar = imp.pularRepetidas ? novas : linhas;
+    var temNome = imp.mapa.indexOf("nome") >= 0;
+
+    var colunas = imp.cabecalho.map(function (h, ci) {
+      var exemplo = "";
+      for (var i = 0; i < imp.corpo.length && !exemplo; i++) exemplo = String(imp.corpo[i][ci] || "").trim();
+      return "<tr><td><strong>" + esc(h || "Coluna " + (ci + 1)) + '</strong><small class="fraco" style="display:block">' + esc(exemplo.slice(0, 40)) + "</small></td>" +
+        '<td><select class="entrada" data-ci="' + ci + '">' + CAMPOS_IMPORT.map(function (c) {
+          return '<option value="' + c[0] + '"' + (imp.mapa[ci] === c[0] ? " selected" : "") + ">" + c[1] + "</option>";
+        }).join("") + "</select></td></tr>";
+    }).join("");
+
+    var previa = vaiEntrar.slice(0, 5).map(function (r) {
+      return "<tr><td><strong>" + esc(r.nome) + "</strong>" + (r._repetida ? '<span class="tag-exemplo">já existe</span>' : "") + "</td><td>" + esc(r.instagram) + "</td><td>" + esc(r.email) + "</td><td>" + esc(r.telefone) +
+        '</td><td><span class="pilula p-' + classe(r.situacao) + '">' + esc(r.situacao) + "</span></td></tr>";
+    }).join("");
+
+    janela.querySelector(".janela-corpo").innerHTML =
+      '<p class="suave" style="margin-bottom:12px">Arquivo <b>' + esc(imp.arquivo) + "</b>" + (imp.aba ? " (aba " + esc(imp.aba) + ")" : "") + ": " +
+        plural(linhas.length, "lead encontrado", "leads encontrados") + ". <button type=\"button\" class=\"link-botao\" id=\"trocar-arquivo\">Escolher outro arquivo</button></p>" +
+      (!temNome ? '<div class="faixa faixa-alerta" style="margin-bottom:12px">Nenhuma coluna está marcada como "Marca". Escolha abaixo qual coluna tem o nome da marca.</div>' : "") +
+      '<h3 style="margin-bottom:6px">1. Confira as colunas</h3>' +
+      '<p class="fraco" style="margin-bottom:8px;font-size:12px">Já deixei marcado o que eu reconheci. Se algo estiver errado, troque na lista.</p>' +
+      '<div class="tabela-caixa" style="margin-bottom:16px"><table class="tabela"><thead><tr><th>Coluna da sua planilha</th><th>Vai para</th></tr></thead><tbody id="mapa-import">' + colunas + "</tbody></table></div>" +
+      '<h3 style="margin-bottom:6px">2. Veja como vai ficar</h3>' +
+      (previa
+        ? '<div class="tabela-caixa"><table class="tabela"><thead><tr><th>Marca</th><th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th></tr></thead><tbody>' + previa + "</tbody></table></div>" +
+          (vaiEntrar.length > 5 ? '<p class="fraco" style="font-size:11.5px;margin-top:6px">Mostrando 5 de ' + vaiEntrar.length + ".</p>" : "")
+        : '<p class="vazio">Nenhum lead novo para importar.</p>') +
+      (repetidas ? '<div class="campo campo-check" style="margin-top:12px"><input type="checkbox" id="pular-repetidas"' + (imp.pularRepetidas ? " checked" : "") + '><label for="pular-repetidas">Pular ' + plural(repetidas, "marca que já está", "marcas que já estão") + " na base ou repetida na planilha (mesmo e-mail, @ ou nome)</label></div>" : "") +
+      '<p class="fraco" style="font-size:11.5px;margin-top:10px">Quem não tiver situação na planilha entra como Lead. As colunas em "Juntar na observação" vão para o campo Observação.</p>' +
+      '<div class="faixa faixa-erro" id="erro-import" hidden style="margin-top:12px"></div>';
+
+    janela.querySelector(".janela-rodape").innerHTML = '<span class="espaco"></span><button type="button" class="btn btn-linha" data-fechar>Cancelar</button>' +
+      '<button type="button" class="btn btn-vinho" id="confirmar-import"' + (!vaiEntrar.length || !temNome ? " disabled" : "") + ">" + icone("subir") + "Importar " + plural(vaiEntrar.length, "marca", "marcas") + "</button>";
+
+    $("#mapa-import").addEventListener("change", function (e) {
+      var sel = e.target.closest("select"); if (!sel) return;
+      var ci = +sel.getAttribute("data-ci"), campo = sel.value;
+      // Cada campo só pode vir de uma coluna (menos "juntar na observação")
+      if (campo && campo !== "_obs") imp.mapa.forEach(function (c, i) { if (c === campo && i !== ci) imp.mapa[i] = "_obs"; });
+      imp.mapa[ci] = campo;
+      telaConferir();
+    });
+    var cx = $("#pular-repetidas");
+    if (cx) cx.addEventListener("change", function () { imp.pularRepetidas = cx.checked; telaConferir(); });
+    $("#trocar-arquivo").addEventListener("click", abrirImportacao);
+    $("#confirmar-import").addEventListener("click", function () { gravarImportacao(vaiEntrar, imp.pularRepetidas ? repetidas : 0); });
+  }
+
+  async function gravarImportacao(linhas, puladas) {
+    var botao = $("#confirmar-import"), erro = $("#erro-import");
+    botao.disabled = true;
+    var gravadas = 0, falhou = null;
+    for (var i = 0; i < linhas.length; i += 100) {
+      botao.textContent = "Importando " + Math.min(i + 100, linhas.length) + " de " + linhas.length + "...";
+      var lote = linhas.slice(i, i + 100).map(function (r) {
+        var v = { nome: r.nome, instagram: r.instagram, email: r.email, telefone: r.telefone, situacao: r.situacao, obs: r.obs, ultimo_contato: r.ultimo_contato, origem: "planilha" };
+        return soCamposOk("marcas", v);
+      });
+      var res = await banco.from("marcas").insert(lote).select();
+      if (res.error) {
+        if (tipoErro(res.error) === "coluna") {
+          var c = colunaDoErro(res.error, Object.keys(lote[0]));
+          if (c) { registrarCampoFalta("marcas", c); i -= 100; continue; }
+        }
+        falhou = res.error; break;
+      }
+      (res.data || []).forEach(function (m) { dados.marcas.push(m); });
+      gravadas += (res.data || []).length;
+    }
+    if (falhou) {
+      console.error(falhou);
+      erro.textContent = (gravadas ? plural(gravadas, "marca foi importada", "marcas foram importadas") + ", mas o resto parou no meio. " : "") + traduzirErro(falhou);
+      erro.hidden = false;
+      botao.textContent = "Tentar de novo";
+      botao.disabled = false;
+      redesenhar();
+      return;
+    }
+    janela.close();
+    avisoRapido(plural(gravadas, "marca importada", "marcas importadas") + (puladas ? ". " + plural(puladas, "pulada porque já existia", "puladas porque já existiam") : ""));
+    estadoMarcas.situacao = "todas";
+    estadoMarcas.busca = "";
+    redesenhar();
   }
 
   /* =========================================================
