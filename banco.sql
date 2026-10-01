@@ -82,6 +82,8 @@ create table if not exists public.marcas (
 );
 -- Para quem já tinha criado a tabela antes: acrescenta o campo nicho
 alter table public.marcas add column if not exists nicho text not null default '';
+-- Marca favorita: fica destacada e fixada no topo da lista
+alter table public.marcas add column if not exists favorita boolean not null default false;
 
 -- 2.3 CALENDÁRIO: o que você vai gravar, editar e postar
 create table if not exists public.calendario (

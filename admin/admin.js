@@ -148,7 +148,7 @@
   var NOMES = { videos: "videos", marcas: "marcas", calendario: "calendario", campanhas: "campanhas", marcados: "marcados", visitas: "visitas", transcricoes: "transcricoes" };
   var COLUNAS = {
     videos: ["id", "titulo", "link", "nicho", "formato", "marca", "destaque", "ordem", "visivel", "exemplo"],
-    marcas: ["id", "criado_em", "nome", "instagram", "email", "telefone", "situacao", "obs", "ultimo_contato", "origem", "nicho", "exemplo"],
+    marcas: ["id", "criado_em", "nome", "instagram", "email", "telefone", "situacao", "obs", "ultimo_contato", "origem", "nicho", "favorita", "exemplo"],
     calendario: ["id", "titulo", "marca", "tipo", "data", "status", "exemplo"],
     campanhas: ["id", "campanha", "cliente", "tipo", "status", "qtd", "valor", "prazo", "pagamento", "ativa", "favorita", "exemplo"],
     marcados: ["chave"],
@@ -795,6 +795,9 @@
     var porNicho = {}, semNicho = 0;
     dados.marcas.forEach(function (m) { var n = String(m.nicho || "").trim(); if (n) porNicho[n] = (porNicho[n] || 0) + 1; else semNicho++; });
     var campoNichoFalta = !!(faltando.marcas && faltando.marcas.nicho);
+    var campoFavFalta = !!(faltando.marcas && faltando.marcas.favorita);
+    var favoritas = dados.marcas.filter(function (m) { return m.favorita; }).length;
+    if (campoFavFalta && estadoMarcas.situacao === "favoritas") estadoMarcas.situacao = "todas";
 
     painel.innerHTML =
       '<div class="ferramentas">' +
@@ -802,6 +805,7 @@
           '<input class="entrada" type="search" id="busca-marcas" placeholder="Buscar por nome, @ ou e-mail" value="' + esc(estadoMarcas.busca) + '"></label>' +
         '<div class="chips" role="group" aria-label="Filtrar por situação">' +
           chip("todas", "Todas", conta.todas, estadoMarcas.situacao) +
+          (campoFavFalta ? "" : '<button type="button" class="chip chip-fav" data-valor="favoritas" aria-pressed="' + (estadoMarcas.situacao === "favoritas") + '">' + icone("estrela") + "Favoritas <small>" + favoritas + "</small></button>") +
           SITUACOES.map(function (s) { return chip(s, s, conta[s], estadoMarcas.situacao, CORES_SITUACAO[s]); }).join("") +
         "</div>" +
         (campoNichoFalta ? "" :
@@ -839,9 +843,9 @@
       window.scrollTo(0, 0);
     });
     $("#csv-marcas").addEventListener("click", function () {
-      baixarCSV("marcas", ["Marca", "Nicho", "Instagram", "E-mail", "Telefone", "Situação", "Observação", "Último contato", "Veio de", "Cadastrada em"],
+      baixarCSV("marcas", ["Favorita", "Marca", "Nicho", "Instagram", "E-mail", "Telefone", "Situação", "Observação", "Último contato", "Veio de", "Cadastrada em"],
         marcasOrdenadas().map(function (m) {
-          return [m.nome, m.nicho || "", m.instagram ? "@" + arroba(m.instagram) : "", m.email, m.telefone, m.situacao, m.obs,
+          return [m.favorita ? "sim" : "", m.nome, m.nicho || "", m.instagram ? "@" + arroba(m.instagram) : "", m.email, m.telefone, m.situacao, m.obs,
             dataBR(m.ultimo_contato), m.origem === "site" ? "Formulário do site" : m.origem === "planilha" ? "Planilha importada" : "Painel", m.criado_em ? dataBR(isoDe(new Date(m.criado_em))) : ""];
         }));
     });
@@ -855,7 +859,8 @@
 
   function marcasOrdenadas() {
     return dados.marcas.slice().sort(function (a, b) {
-      return String(b.criado_em || "").localeCompare(String(a.criado_em || "")) || numero(b.id) - numero(a.id);
+      // Favoritas ficam fixadas em cima
+      return ((b.favorita ? 1 : 0) - (a.favorita ? 1 : 0)) || String(b.criado_em || "").localeCompare(String(a.criado_em || "")) || numero(b.id) - numero(a.id);
     });
   }
 
@@ -864,7 +869,8 @@
     if (tabelaFalta.marcas) { caixa.innerHTML = '<p class="vazio">A tabela de marcas ainda não existe no banco. Rode o banco.sql no Supabase para começar.</p>'; return; }
     var termo = normalizar(estadoMarcas.busca);
     var lista = marcasOrdenadas().filter(function (m) {
-      if (estadoMarcas.situacao !== "todas" && m.situacao !== estadoMarcas.situacao) return false;
+      if (estadoMarcas.situacao === "favoritas") { if (!m.favorita) return false; }
+      else if (estadoMarcas.situacao !== "todas" && m.situacao !== estadoMarcas.situacao) return false;
       if (estadoMarcas.nicho !== "todos" && String(m.nicho || "").trim() !== estadoMarcas.nicho) return false;
       if (!termo) return true;
       return [m.nome, m.instagram, "@" + arroba(m.instagram), m.email, m.nicho].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
@@ -873,12 +879,17 @@
     if (!lista.length) { caixa.innerHTML = '<p class="vazio">Nenhuma marca encontrada com essa busca ou filtro.</p>'; return; }
 
     var mostraNicho = !(faltando.marcas && faltando.marcas.nicho);
+    var mostraFav = !(faltando.marcas && faltando.marcas.favorita);
+    var ultimaFav = -1;
+    lista.forEach(function (m, i) { if (m.favorita) ultimaFav = i; });
     caixa.innerHTML = '<div class="tabela-caixa"><table class="tabela"><thead><tr>' +
+      (mostraFav ? '<th class="curto"><span class="visualmente-oculto">Favorita</span>' + icone("estrela") + "</th>" : "") +
       "<th>Marca</th>" + (mostraNicho ? "<th>Nicho</th>" : "") + "<th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Observação</th><th>Último contato</th>" +
       '<th class="curto"><span class="visualmente-oculto">WhatsApp</span></th></tr></thead><tbody>' +
-      lista.map(function (m) {
+      lista.map(function (m, i) {
         var h = arroba(m.instagram), w = linkWhats(m.telefone);
-        return '<tr class="clicavel" data-id="' + esc(m.id) + '" tabindex="0">' +
+        return '<tr class="clicavel' + (m.favorita ? " favorita" : "") + (i === ultimaFav && i < lista.length - 1 ? " fim-fixadas" : "") + '" data-id="' + esc(m.id) + '" tabindex="0">' +
+          (mostraFav ? '<td class="curto"><button type="button" class="btn-icone estrela" aria-pressed="' + !!m.favorita + '" aria-label="' + (m.favorita ? "Tirar dos favoritos" : "Favoritar e fixar no topo") + '" title="' + (m.favorita ? "Tirar dos favoritos" : "Favoritar e fixar no topo") + '">' + icone("estrela") + "</button></td>" : "") +
           "<td><strong>" + esc(m.nome || "(sem nome)") + "</strong>" + tagExemplo(m) + (m.origem === "site" ? '<span class="tag-site">site</span>' : "") + (m.origem === "planilha" ? '<span class="tag-site">planilha</span>' : "") + "</td>" +
           (mostraNicho ? '<td class="curto">' + (m.nicho ? '<span class="pilula sem-bola p-nicho">' + esc(m.nicho) + "</span>" : '<span class="fraco">sem nicho</span>') + "</td>" : "") +
           "<td>" + (h ? '<a href="https://www.instagram.com/' + encodeURIComponent(h) + '/" target="_blank" rel="noopener">@' + esc(h) + "</a>" : "") + "</td>" +
@@ -889,13 +900,26 @@
           '<td class="curto">' + dataBR(m.ultimo_contato) + "</td>" +
           '<td class="curto">' + (w ? '<a class="btn-icone whats" href="' + w + '" target="_blank" rel="noopener" aria-label="Abrir conversa no WhatsApp" title="Abrir no WhatsApp">' + icone("whats") + "</a>" : "") + "</td></tr>";
       }).join("") + "</tbody></table></div>" +
-      '<p class="fraco" style="margin-top:8px;font-size:11.5px">' + plural(lista.length, "marca", "marcas") + " na lista. Clique numa linha para editar.</p>";
+      '<p class="fraco" style="margin-top:8px;font-size:11.5px">' + plural(lista.length, "marca", "marcas") + " na lista. Clique numa linha para editar" + (mostraFav ? ", ou na estrela para fixar no topo" : "") + ".</p>";
 
     var tbody = $("tbody", caixa);
     function abrir(tr) { var m = acharPorId(dados.marcas, tr.getAttribute("data-id")); if (m) formularioMarca(m); }
     tbody.addEventListener("click", function (e) {
       if (e.target.closest("a")) return;
-      var tr = e.target.closest("tr[data-id]"); if (tr) abrir(tr);
+      var tr = e.target.closest("tr[data-id]"); if (!tr) return;
+      var estrela = e.target.closest(".estrela");
+      if (estrela) {
+        var m = acharPorId(dados.marcas, tr.getAttribute("data-id")); if (!m) return;
+        var nova = !m.favorita;
+        estrela.disabled = true;
+        gravar("marcas", { favorita: nova }, m.id).then(function (linha) {
+          trocarNaLista(dados.marcas, linha);
+          avisoRapido(nova ? "Favoritada e fixada no topo" : "Saiu dos favoritos");
+          redesenhar();
+        }).catch(function (er) { estrela.disabled = false; avisoRapido(traduzirErro(er), true); });
+        return;
+      }
+      abrir(tr);
     });
     tbody.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && e.target.matches("tr[data-id]")) abrir(e.target);
@@ -916,7 +940,7 @@
         { nome: "nicho", rotulo: "Nicho", sugestoes: nichosEmUso(), dica: "ex: Casa e decoração" },
         { nome: "ultimo_contato", rotulo: "Último contato", tipo: "data" },
         { nome: "obs", rotulo: "Observação", tipo: "area" }
-      ],
+      ].concat(faltando.marcas && faltando.marcas.favorita ? [] : [{ nome: "favorita", rotulo: "Favorita (fica destacada e fixada no topo da lista)", tipo: "check" }]),
       aoSalvar: function (val) {
         if (val.instagram) val.instagram = "@" + arroba(val.instagram);
         // Marca nova sem nicho: o painel tenta adivinhar

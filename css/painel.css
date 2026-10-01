@@ -443,3 +443,8 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
 .filtro-nicho{width:auto;min-width:170px;max-width:240px;min-height:30px;padding:4px 10px;font-size:12px;border-radius:999px}
 .p-nicho{background:#ebe4f0;color:#51406a;font-weight:500}
 .escolha-nicho{min-width:180px;min-height:30px;padding:4px 8px;font-size:12px}
+/* Marcas favoritas: destacadas e fixadas no topo */
+.tabela tr.favorita td{background:#fcf3ee}
+.tabela tr.favorita.clicavel:hover td{background:#f8ebe4}
+.tabela tr.fim-fixadas td{border-bottom:2px solid rgba(79,24,33,.22)}
+.chip-fav .icone{width:13px;height:13px;color:#b8860b;fill:#b8860b}
