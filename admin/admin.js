@@ -148,7 +148,7 @@
   var NOMES = { videos: "videos", marcas: "marcas", calendario: "calendario", campanhas: "campanhas", marcados: "marcados", visitas: "visitas", transcricoes: "transcricoes" };
   var COLUNAS = {
     videos: ["id", "titulo", "link", "nicho", "formato", "marca", "destaque", "ordem", "visivel", "exemplo"],
-    marcas: ["id", "criado_em", "nome", "instagram", "email", "telefone", "situacao", "obs", "ultimo_contato", "origem", "exemplo"],
+    marcas: ["id", "criado_em", "nome", "instagram", "email", "telefone", "situacao", "obs", "ultimo_contato", "origem", "nicho", "exemplo"],
     calendario: ["id", "titulo", "marca", "tipo", "data", "status", "exemplo"],
     campanhas: ["id", "campanha", "cliente", "tipo", "status", "qtd", "valor", "prazo", "pagamento", "ativa", "favorita", "exemplo"],
     marcados: ["chave"],
@@ -741,14 +741,60 @@
      ========================================================= */
   var SITUACOES = ["Lead", "Conversando", "Cliente", "Parada"];
   var CORES_SITUACAO = { Lead: "#6e4b35", Conversando: "#7a5a12", Cliente: "#2f4139", Parada: "#8f817a" };
-  var estadoMarcas = { busca: "", situacao: "todas" };
+  var estadoMarcas = { busca: "", situacao: "todas", nicho: "todos" };
+
+  // NICHOS das marcas: a lista que aparece nas sugestões e no filtro
+  var NICHOS_MARCA = ["Beleza", "Selfcare", "Moda", "Casa e decoração", "Tech", "Fitness e nutrição", "Gastronomia",
+    "Saúde", "Pet", "Maternidade e infantil", "Papelaria", "Arte e cultura", "Viagem e turismo", "Empreendedorismo e negócios", "Diversos"];
+  // Palavras que indicam cada nicho (procuradas no nome, @, site do e-mail e observação)
+  var PISTAS_NICHO = [
+    ["Pet", /\bpet|petshop|\bdog|cachorr|\bgato|\bcat\b|veterin|\bvet\b|racao/],
+    ["Maternidade e infantil", /\bbebe|baby|\bkids?\b|infantil|crianc|matern|brinqued|\btoys?\b/],
+    ["Papelaria", /papel|caderno|planner|stationery|caneta|livr|\bbooks?\b|editora/],
+    ["Selfcare", /selfcare|self care|autocuidado|intim|body ?care|\bspa\b|sabonete|banho/],
+    ["Beleza", /beaut|beleza|cosmet|\bmake|maquiag|skin|cabel|\bhair|perfum|\bunha|\bnails?\b|estetic|derma|batom|salao|salon|barbear|barber/],
+    ["Fitness e nutrição", /nutri|suplement|whey|protein|fitness|\bfit\b|academia|\bgym|crossfit|vitamin|wellness|esport|sports?\b|treino|atlet|growth|creatina|\bpre ?treino/],
+    ["Gastronomia", /cafe|coffee|\bfood|comida|restaurant|gourmet|\bdoce|confeit|chocolat|padaria|\bpao\b|pizza|burger|hamburg|bebida|drink|cerveja|\bbeer|vinho|\bwine|kombucha|\bcha\b|\btea\b|sorvet|acai|bistro|delivery|lanche|sushi|churras|empori|mercado|cozinha/],
+    ["Moda", /\bmoda|fashion|roupa|\bwear\b|wear$|boutique|jeans|vestid|calcad|sapat|\btenis|sneaker|bolsa|acessori|\bjoia|semijoia|bijou|oculos|otica|lingerie|biquini|beachwear|atelie|alfaiat|\bstyle/],
+    ["Casa e decoração", /\bcasa\b|\bhome|decor|\bmovei|interior|\bcama\b|utensil|organiz|jardim|\bplanta|\bvelas?\b|aromatiz|tapete|luminar|arquitet|enxoval|marcenar/],
+    ["Tech", /\btech|tecnolog|\bapps?\b|digital|software|\bsaas|startup|\bgames?\b|gamer|eletronic|\bsmart|\bia\b|\bai\b|sistema|plataforma|fintech|\bbank|\bpay\b|cripto|inform/],
+    ["Saúde", /saude|clinic|odonto|\bdent|farma|medic|psico|terapia|health|hospital|laborat|fisio/],
+    ["Viagem e turismo", /viag|travel|turism|hotel|pousada|resort|\btrip|\btour|hostel/],
+    ["Empreendedorismo e negócios", /curso|escola|educa|mentori|consult|marketing|agencia|imobil|advoc|juridic|contab|negocio|business|concurso|sebrae|franquia/],
+    ["Arte e cultura", /\barte\b|\bart\b|cultur|museu|teatro|cinema|musica|\bmusic|galeria|fotograf/]
+  ];
+  function nichoDoTexto(t) {
+    var n = " " + normalizar(t).replace(/[._@\/-]+/g, " ") + " ";
+    for (var i = 0; i < PISTAS_NICHO.length; i++) if (PISTAS_NICHO[i][1].test(n)) return PISTAS_NICHO[i][0];
+    return "";
+  }
+  // Sugere um nicho para uma marca. Primeiro olha se a observação já diz ("Nicho: Suplementos")
+  function sugerirNicho(m) {
+    var obs = String(m.obs || "");
+    var dito = obs.match(/(?:nicho|segmento|categoria|setor|ramo)\s*:\s*([^·\n]+)/i);
+    if (dito) {
+      var v = dito[1].trim();
+      var igual = NICHOS_MARCA.filter(function (x) { return normalizar(x) === normalizar(v); })[0];
+      return igual || nichoDoTexto(v) || maiuscula(v.slice(0, 60));
+    }
+    var dominio = String(m.email || "").split("@")[1] || "";
+    if (/^(gmail|hotmail|outlook|yahoo|icloud|live|uol|bol|terra)\./i.test(dominio)) dominio = "";
+    return nichoDoTexto([m.nome, arroba(m.instagram), dominio.split(".")[0], obs].join(" "));
+  }
+  function nichosEmUso() {
+    return unicos(NICHOS_MARCA.concat(dados.marcas.map(function (m) { return m.nicho; })));
+  }
 
   function desenharMarcas(painel) {
     // Enquanto há uma planilha esperando confirmação, a aba mostra a prévia dela
     if (importacao && importacao.ativa) { desenharPreviaImport(painel); return; }
+    if (classificacao && classificacao.ativa) { desenharClassificacao(painel); return; }
     var conta = { todas: dados.marcas.length };
     SITUACOES.forEach(function (s) { conta[s] = 0; });
     dados.marcas.forEach(function (m) { if (conta[m.situacao] != null) conta[m.situacao]++; });
+    var porNicho = {}, semNicho = 0;
+    dados.marcas.forEach(function (m) { var n = String(m.nicho || "").trim(); if (n) porNicho[n] = (porNicho[n] || 0) + 1; else semNicho++; });
+    var campoNichoFalta = !!(faltando.marcas && faltando.marcas.nicho);
 
     painel.innerHTML =
       '<div class="ferramentas">' +
@@ -758,7 +804,17 @@
           chip("todas", "Todas", conta.todas, estadoMarcas.situacao) +
           SITUACOES.map(function (s) { return chip(s, s, conta[s], estadoMarcas.situacao, CORES_SITUACAO[s]); }).join("") +
         "</div>" +
+        (campoNichoFalta ? "" :
+          '<label class="visualmente-oculto" for="filtro-nicho">Filtrar por nicho</label>' +
+          '<select class="entrada filtro-nicho" id="filtro-nicho">' +
+            '<option value="todos">Todos os nichos</option>' +
+            Object.keys(porNicho).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); }).map(function (n) {
+              return '<option value="' + esc(n) + '"' + (estadoMarcas.nicho === n ? " selected" : "") + ">" + esc(n) + " (" + porNicho[n] + ")</option>";
+            }).join("") +
+            (semNicho ? '<option value=""' + (estadoMarcas.nicho === "" ? " selected" : "") + ">Sem nicho (" + semNicho + ")</option>" : "") +
+          "</select>") +
         '<span class="espaco"></span>' +
+        (campoNichoFalta || !dados.marcas.length ? "" : '<button class="btn btn-linha" type="button" id="identificar-nichos">' + icone("busca") + "Identificar nichos" + (semNicho ? " <small class=\"fraco\">(" + semNicho + " sem)</small>" : "") + "</button>") +
         '<button class="btn btn-linha" type="button" id="importar-marcas">' + icone("subir") + "Importar planilha</button>" +
         '<button class="btn btn-linha" type="button" id="csv-marcas">' + icone("baixar") + "Baixar CSV</button>" +
         '<button class="btn btn-vinho" type="button" id="nova-marca">' + icone("mais") + "Adicionar marca</button>" +
@@ -774,10 +830,18 @@
     });
     $("#nova-marca").addEventListener("click", function () { formularioMarca(null); });
     $("#importar-marcas").addEventListener("click", abrirImportacao);
+    var filtroNicho = $("#filtro-nicho");
+    if (filtroNicho) filtroNicho.addEventListener("change", function () { estadoMarcas.nicho = this.value; desenharTabelaMarcas(); });
+    var botaoNichos = $("#identificar-nichos");
+    if (botaoNichos) botaoNichos.addEventListener("click", function () {
+      classificacao = { ativa: true, todas: semNicho === 0, escolha: {} };
+      redesenhar();
+      window.scrollTo(0, 0);
+    });
     $("#csv-marcas").addEventListener("click", function () {
-      baixarCSV("marcas", ["Marca", "Instagram", "E-mail", "Telefone", "Situação", "Observação", "Último contato", "Veio de", "Cadastrada em"],
+      baixarCSV("marcas", ["Marca", "Nicho", "Instagram", "E-mail", "Telefone", "Situação", "Observação", "Último contato", "Veio de", "Cadastrada em"],
         marcasOrdenadas().map(function (m) {
-          return [m.nome, m.instagram ? "@" + arroba(m.instagram) : "", m.email, m.telefone, m.situacao, m.obs,
+          return [m.nome, m.nicho || "", m.instagram ? "@" + arroba(m.instagram) : "", m.email, m.telefone, m.situacao, m.obs,
             dataBR(m.ultimo_contato), m.origem === "site" ? "Formulário do site" : m.origem === "planilha" ? "Planilha importada" : "Painel", m.criado_em ? dataBR(isoDe(new Date(m.criado_em))) : ""];
         }));
     });
@@ -801,19 +865,22 @@
     var termo = normalizar(estadoMarcas.busca);
     var lista = marcasOrdenadas().filter(function (m) {
       if (estadoMarcas.situacao !== "todas" && m.situacao !== estadoMarcas.situacao) return false;
+      if (estadoMarcas.nicho !== "todos" && String(m.nicho || "").trim() !== estadoMarcas.nicho) return false;
       if (!termo) return true;
-      return [m.nome, m.instagram, "@" + arroba(m.instagram), m.email].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
+      return [m.nome, m.instagram, "@" + arroba(m.instagram), m.email, m.nicho].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
     });
     if (!dados.marcas.length) { caixa.innerHTML = '<p class="vazio">Nenhuma marca ainda. Quem mandar o formulário do seu site aparece aqui sozinho, como Lead.</p>'; return; }
     if (!lista.length) { caixa.innerHTML = '<p class="vazio">Nenhuma marca encontrada com essa busca ou filtro.</p>'; return; }
 
+    var mostraNicho = !(faltando.marcas && faltando.marcas.nicho);
     caixa.innerHTML = '<div class="tabela-caixa"><table class="tabela"><thead><tr>' +
-      "<th>Marca</th><th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Observação</th><th>Último contato</th>" +
+      "<th>Marca</th>" + (mostraNicho ? "<th>Nicho</th>" : "") + "<th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Observação</th><th>Último contato</th>" +
       '<th class="curto"><span class="visualmente-oculto">WhatsApp</span></th></tr></thead><tbody>' +
       lista.map(function (m) {
         var h = arroba(m.instagram), w = linkWhats(m.telefone);
         return '<tr class="clicavel" data-id="' + esc(m.id) + '" tabindex="0">' +
           "<td><strong>" + esc(m.nome || "(sem nome)") + "</strong>" + tagExemplo(m) + (m.origem === "site" ? '<span class="tag-site">site</span>' : "") + (m.origem === "planilha" ? '<span class="tag-site">planilha</span>' : "") + "</td>" +
+          (mostraNicho ? '<td class="curto">' + (m.nicho ? '<span class="pilula sem-bola p-nicho">' + esc(m.nicho) + "</span>" : '<span class="fraco">sem nicho</span>') + "</td>" : "") +
           "<td>" + (h ? '<a href="https://www.instagram.com/' + encodeURIComponent(h) + '/" target="_blank" rel="noopener">@' + esc(h) + "</a>" : "") + "</td>" +
           "<td>" + (m.email ? '<a href="mailto:' + esc(m.email) + '">' + esc(m.email) + "</a>" : "") + "</td>" +
           '<td class="curto">' + esc(m.telefone) + "</td>" +
@@ -846,17 +913,120 @@
         { nome: "email", rotulo: "E-mail", tipo: "email" },
         { nome: "telefone", rotulo: "Telefone", tipo: "tel", dica: "(11) 90000-0000" },
         { nome: "situacao", rotulo: "Situação", tipo: "selecao", opcoes: SITUACOES.map(function (s) { return [s, s]; }) },
+        { nome: "nicho", rotulo: "Nicho", sugestoes: nichosEmUso(), dica: "ex: Casa e decoração" },
         { nome: "ultimo_contato", rotulo: "Último contato", tipo: "data" },
         { nome: "obs", rotulo: "Observação", tipo: "area" }
       ],
       aoSalvar: function (val) {
         if (val.instagram) val.instagram = "@" + arroba(val.instagram);
+        // Marca nova sem nicho: o painel tenta adivinhar
+        if (!m && !val.nicho) val.nicho = sugerirNicho(val);
         return gravar("marcas", val, m ? m.id : null).then(function (linha) { trocarNaLista(dados.marcas, linha); });
       },
       aoApagar: m ? function () { return apagar("marcas", m.id).then(function () { tirarDaLista(dados.marcas, m.id); }); } : null
     });
   }
 
+
+
+  /* =========================================================
+     IDENTIFICAR NICHOS
+     O painel sugere um nicho para cada marca, você confere e salva.
+     ========================================================= */
+  var classificacao = null;
+
+  function desenharClassificacao(painel) {
+    var cl = classificacao;
+    var lista = marcasOrdenadas().filter(function (m) { return !m.exemplo && (cl.todas || !String(m.nicho || "").trim()); });
+    var opcoes = nichosEmUso();
+    function escolhido(m) { return m.id in cl.escolha ? cl.escolha[m.id] : (String(m.nicho || "").trim() || sugerirNicho(m)); }
+    var comSugestao = lista.filter(function (m) { return !String(m.nicho || "").trim() && sugerirNicho(m); }).length;
+
+    painel.innerHTML =
+      '<div class="faixa-previa">' +
+        '<div class="miolo"><strong>Identificar nichos</strong>' +
+          "<small>" + (cl.todas ? plural(lista.length, "marca", "marcas") : plural(lista.length, "marca sem nicho", "marcas sem nicho")) +
+          " · o painel sugeriu para " + comSugestao + ' · <b id="conta-nichos"></b>. Confira e troque o que estiver errado.</small></div>' +
+        '<button type="button" class="btn btn-linha" id="cancelar-nichos">Cancelar</button>' +
+        '<button type="button" class="btn btn-vinho" id="salvar-nichos">' + icone("ok") + "<span></span></button>" +
+      "</div>" +
+      '<div class="faixa faixa-erro" id="erro-nichos"' + (cl.erro ? "" : " hidden") + ' style="margin-bottom:12px">' + esc(cl.erro || "") + "</div>" +
+      '<div class="campo campo-check" style="margin-bottom:10px"><input type="checkbox" id="mostrar-todas-nichos"' + (cl.todas ? " checked" : "") + '><label for="mostrar-todas-nichos">Mostrar também as marcas que já têm nicho (para revisar)</label></div>' +
+      (lista.length
+        ? '<div class="tabela-caixa previa-planilha"><table class="tabela"><thead><tr><th class="num">#</th><th>Marca</th><th>Instagram</th><th>E-mail</th><th>Observação</th><th>Nicho</th></tr></thead><tbody id="linhas-nichos">' +
+            lista.map(function (m, n) {
+              var atual = String(m.nicho || "").trim(), sug = escolhido(m);
+              var lista2 = unicos(opcoes.concat([sug]).filter(Boolean));
+              return '<tr data-id="' + esc(m.id) + '"><td class="num fraco">' + (n + 1) + "</td>" +
+                "<td><strong>" + esc(m.nome) + "</strong></td><td>" + esc(m.instagram) + "</td><td>" + esc(m.email) + "</td>" +
+                '<td class="obs-import">' + esc(m.obs) + "</td>" +
+                '<td><select class="entrada escolha-nicho">' +
+                  '<option value=""' + (!sug ? " selected" : "") + ">Sem nicho</option>" +
+                  lista2.map(function (o) { return '<option value="' + esc(o) + '"' + (o === sug ? " selected" : "") + ">" + esc(o) + "</option>"; }).join("") +
+                  '<option value="__outro">Outro nicho...</option>' +
+                "</select>" + (!atual && sug && !(m.id in cl.escolha) ? '<small class="fraco" style="display:block;margin-top:2px">sugerido</small>' : "") + "</td></tr>";
+            }).join("") + "</tbody></table></div>"
+        : '<p class="vazio">Todas as marcas já têm nicho. Marque a caixinha acima para revisar.</p>');
+
+    function mudancas() {
+      return lista.filter(function (m) { return escolhido(m) !== String(m.nicho || "").trim(); });
+    }
+    function atualizar() {
+      var n = mudancas().length;
+      $("#conta-nichos").textContent = plural(n, "mudança para salvar", "mudanças para salvar");
+      var b = $("#salvar-nichos");
+      $("span", b).textContent = n ? "Salvar " + plural(n, "nicho", "nichos") : "Nada para salvar";
+      b.disabled = !n;
+    }
+    atualizar();
+
+    var corpo = $("#linhas-nichos");
+    if (corpo) corpo.addEventListener("change", function (e) {
+      var sel = e.target.closest(".escolha-nicho"); if (!sel) return;
+      var id = +sel.closest("tr").getAttribute("data-id");
+      if (sel.value === "__outro") {
+        var novo = prompt("Qual nicho? (ex: Joias, Bebidas, Educação)");
+        if (novo && novo.trim()) {
+          novo = maiuscula(novo.trim().slice(0, 100));
+          cl.escolha[id] = novo;
+          var op = document.createElement("option"); op.value = novo; op.textContent = novo;
+          sel.insertBefore(op, sel.lastElementChild);
+          sel.value = novo;
+        } else sel.value = escolhido(acharPorId(dados.marcas, id));
+      } else cl.escolha[id] = sel.value;
+      var dica = sel.parentNode.querySelector("small"); if (dica) dica.remove();
+      atualizar();
+    });
+    $("#mostrar-todas-nichos").addEventListener("change", function () { cl.todas = this.checked; redesenhar(); });
+    $("#cancelar-nichos").addEventListener("click", function () { classificacao = null; redesenhar(); });
+    $("#salvar-nichos").addEventListener("click", function () { salvarNichos(mudancas(), escolhido); });
+  }
+
+  async function salvarNichos(lista, escolhido) {
+    var b = $("#salvar-nichos");
+    b.disabled = true;
+    classificacao.erro = "";
+    var feitas = 0, falhou = null;
+    // Salva de 10 em 10 para ser rápido sem sobrecarregar
+    for (var i = 0; i < lista.length && !falhou; i += 10) {
+      $("span", b).textContent = "Salvando " + Math.min(i + 10, lista.length) + " de " + lista.length + "...";
+      var lote = lista.slice(i, i + 10);
+      var res = await Promise.all(lote.map(function (m) {
+        var nicho = escolhido(m);
+        return gravar("marcas", { nicho: nicho }, m.id).then(function (linha) { trocarNaLista(dados.marcas, linha); delete classificacao.escolha[m.id]; feitas++; })
+          .catch(function (e) { falhou = falhou || e; });
+      }));
+    }
+    if (falhou) {
+      console.error(falhou);
+      classificacao.erro = (feitas ? plural(feitas, "nicho foi salvo", "nichos foram salvos") + ", mas o resto não. " : "") + traduzirErro(falhou);
+      redesenhar();
+      return;
+    }
+    classificacao = null;
+    avisoRapido(plural(feitas, "nicho salvo", "nichos salvos"));
+    redesenhar();
+  }
 
   /* =========================================================
      IMPORTAR PLANILHA DE MARCAS (CSV ou Excel)
@@ -865,7 +1035,7 @@
      ========================================================= */
   var CAMPOS_IMPORT = [
     ["nome", "Marca"], ["instagram", "Instagram"], ["email", "E-mail"], ["telefone", "Telefone"],
-    ["situacao", "Situação"], ["obs", "Observação"], ["ultimo_contato", "Último contato"],
+    ["situacao", "Situação"], ["nicho", "Nicho"], ["obs", "Observação"], ["ultimo_contato", "Último contato"],
     ["_obs", "Juntar na observação"], ["", "Não importar"]
   ];
   // Nome da coluna na planilha que indica cada campo (na ordem de prioridade)
@@ -874,12 +1044,13 @@
     ["instagram", /insta|^ig$|arroba|^@|perfil/],
     ["telefone", /telefone|celular|whats|^fone|^tel\b|^tel$|zap|wpp/],
     ["situacao", /situac|status|etapa|fase|estagio/],
+    ["nicho", /nicho|segmento|categoria|setor|ramo|^area/],
     ["ultimo_contato", /ultimo|data/],
     ["obs", /^obs|observ|^nota|anotac|coment|detalhe/],
     ["nome", /marca|empresa|brand|loja|cliente|fantasia|razao|companhia|^nome$|^nome /],
-    ["_obs", /contato|responsavel|pessoa|cidade|estado|nicho|segmento|site|cargo/]
+    ["_obs", /contato|responsavel|pessoa|cidade|estado|site|cargo/]
   ];
-  var LIMITES_MARCA = { nome: 200, instagram: 200, email: 200, telefone: 50, obs: 5000 };
+  var LIMITES_MARCA = { nome: 200, instagram: 200, email: 200, telefone: 50, obs: 5000, nicho: 100 };
   var importacao = null;
 
   function carregarScript(url) {
@@ -1010,7 +1181,7 @@
   function montarLinhas() {
     var imp = importacao, saida = [];
     imp.corpo.forEach(function (l, li) {
-      var r = { _i: li, nome: "", instagram: "", email: "", telefone: "", situacao: "Lead", obs: "", ultimo_contato: null }, extras = [], sitOriginal = "";
+      var r = { _i: li, nome: "", instagram: "", email: "", telefone: "", situacao: "Lead", nicho: "", obs: "", ultimo_contato: null }, extras = [], sitOriginal = "";
       imp.mapa.forEach(function (campo, ci) {
         var v = String(l[ci] == null ? "" : l[ci]).trim();
         if (!v || !campo) return;
@@ -1031,6 +1202,13 @@
       if (r.instagram === "@") r.instagram = "";
       if (!r.nome) r.nome = r.instagram || r.email || "";
       if (!r.nome) return; // linha vazia
+      if (r.nicho) {
+        var igual = NICHOS_MARCA.filter(function (x) { return normalizar(x) === normalizar(r.nicho); })[0];
+        r.nicho = igual || nichoDoTexto(r.nicho) || maiuscula(r.nicho);
+      } else {
+        r.nicho = sugerirNicho(r);
+        r._nichoSugerido = !!r.nicho;
+      }
       Object.keys(LIMITES_MARCA).forEach(function (k) { r[k] = String(r[k] || "").slice(0, LIMITES_MARCA[k]); });
       saida.push(r);
     });
@@ -1115,6 +1293,7 @@
         '<td class="curto"><input type="checkbox" class="entra-linha" aria-label="Importar ' + esc(r.nome) + '"' + (sim ? " checked" : "") + "></td>" +
         '<td class="num fraco">' + (n + 1) + "</td>" +
         "<td><strong>" + esc(r.nome) + "</strong>" + (r._repetida ? '<span class="tag-exemplo">já existe</span>' : "") + "</td>" +
+        '<td class="curto">' + (r.nicho ? esc(r.nicho) + (r._nichoSugerido ? ' <small class="fraco">(sugerido)</small>' : "") : '<span class="fraco">sem nicho</span>') + "</td>" +
         "<td>" + esc(r.instagram) + "</td>" +
         "<td>" + esc(r.email) + "</td>" +
         '<td class="curto">' + esc(r.telefone) + "</td>" +
@@ -1138,7 +1317,7 @@
       (linhas.length
         ? '<div class="tabela-caixa previa-planilha"><table class="tabela"><thead><tr>' +
             '<th class="curto"><input type="checkbox" id="todas-linhas" aria-label="Marcar ou desmarcar todas"></th><th class="num">#</th>' +
-            "<th>Marca</th><th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Último contato</th><th>Observação</th>" +
+            "<th>Marca</th><th>Nicho</th><th>Instagram</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Último contato</th><th>Observação</th>" +
           '</tr></thead><tbody id="linhas-import">' + planilha + "</tbody></table></div>"
         : '<p class="vazio">Não encontrei nenhuma marca com essas colunas. Clique em "Ajustar colunas" para conferir.</p>') +
       '<p class="fraco" style="font-size:11.5px;margin-top:8px">Desmarque a caixinha de quem você não quer trazer. Quem não tiver situação na planilha entra como Lead. As colunas em "Juntar na observação" vão para o campo Observação.</p>';
@@ -1223,7 +1402,7 @@
     for (var i = 0; i < linhas.length; i += 100) {
       botao.textContent = "Importando " + Math.min(i + 100, linhas.length) + " de " + linhas.length + "...";
       var lote = linhas.slice(i, i + 100).map(function (r) {
-        var v = { nome: r.nome, instagram: r.instagram, email: r.email, telefone: r.telefone, situacao: r.situacao, obs: r.obs, ultimo_contato: r.ultimo_contato, origem: "planilha" };
+        var v = { nome: r.nome, instagram: r.instagram, email: r.email, telefone: r.telefone, situacao: r.situacao, nicho: r.nicho, obs: r.obs, ultimo_contato: r.ultimo_contato, origem: "planilha" };
         return soCamposOk("marcas", v);
       });
       var res = await banco.from("marcas").insert(lote).select();

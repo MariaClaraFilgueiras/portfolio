@@ -77,8 +77,11 @@ create table if not exists public.marcas (
   obs             text not null default '',
   ultimo_contato  date,
   origem          text not null default 'painel',   -- "site" quando veio do formulário
+  nicho           text not null default '',         -- Moda, Casa e decoração, Tech...
   exemplo         boolean not null default false
 );
+-- Para quem já tinha criado a tabela antes: acrescenta o campo nicho
+alter table public.marcas add column if not exists nicho text not null default '';
 
 -- 2.3 CALENDÁRIO: o que você vai gravar, editar e postar
 create table if not exists public.calendario (
@@ -244,6 +247,7 @@ alter table public.marcas add constraint marcas_tamanhos check (
   and char_length(email)     <= 200
   and char_length(telefone)  <= 50
   and char_length(obs)       <= 5000
+  and char_length(nicho)     <= 100
 );
 
 

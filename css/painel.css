@@ -440,3 +440,6 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
 .faixa-previa small{display:block;font-size:12px;color:var(--tinta-suave);margin-top:2px}
 .faixa-previa small b{color:var(--vinho)}
 .aba .previa-planilha{max-height:calc(100vh - 230px);min-height:240px}
+.filtro-nicho{width:auto;min-width:170px;max-width:240px;min-height:30px;padding:4px 10px;font-size:12px;border-radius:999px}
+.p-nicho{background:#ebe4f0;color:#51406a;font-weight:500}
+.escolha-nicho{min-width:180px;min-height:30px;padding:4px 8px;font-size:12px}
