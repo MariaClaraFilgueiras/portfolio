@@ -150,6 +150,11 @@ button,input,textarea{font:inherit;color:inherit}
 .capa-redes svg{width:24px;height:24px}
 .capa-foto{min-height:100%}
 .capa-foto .midia{height:100%;min-height:520px;background:linear-gradient(170deg,#d4e2ef 0%,#a9bfd4 45%,#521a1e 100%)}
+/* Foto da capa: o quadro preenche o espaço mantendo a proporção da foto */
+.foto-piscando{position:relative;height:100%;min-height:520px;overflow:hidden;container-type:size;background:var(--nude)}
+.foto-quadro{position:absolute;left:50%;top:50%;width:max(100cqw, calc(100cqh * 890 / 1334));aspect-ratio:890/1334;transform:translate(-50%,-50%)}
+.foto-quadro img{width:100%;height:100%}
+
 
 /* =========================================================
    2. SOBRE
@@ -363,7 +368,7 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
 @media (max-width:1000px){
   .capa{grid-template-columns:1fr;min-height:0}
   .capa-painel{padding:72px 24px 96px 96px}
-  .capa-foto .midia{min-height:0;aspect-ratio:4/5;max-height:80vh}
+  .capa-foto .midia,.foto-piscando{min-height:0;aspect-ratio:4/5;max-height:80vh;height:auto}
   .capa-ano{left:96px;top:30px}
   .capa-vertical{width:64px}
   .sobre,.processo{grid-template-columns:1fr}
@@ -454,12 +459,13 @@ a.video:hover .play{transform:scale(1.1);background:var(--vinho)}
     </div>
     <div class="capa-foto">
       <!--
-        FOTO DA CAPA: apague a span "midia-legenda" e coloque dentro da div abaixo:
-        <img src="imagens/capa.jpg" alt="Maria Clara Filgueiras sorrindo, sentada numa cadeira de madeira">
-        Salve a foto (vertical, JPG de até 300 KB) numa pasta "imagens" ao lado do index.html.
+        FOTO DA CAPA: o arquivo fica em imagens/capa.jpg (890 x 1334).
+        Para trocar, substitua o arquivo mantendo o mesmo nome.
       -->
-      <div class="midia" role="img" aria-label="Espaço para a foto principal de Maria Clara Filgueiras">
-        <span class="midia-legenda">foto da creator 4:5</span>
+      <div class="foto-piscando">
+        <div class="foto-quadro">
+          <img src="imagens/capa.jpg" alt="Maria Clara Filgueiras sorrindo na praia, olhando para trás e segurando uma flor amarela" width="890" height="1334">
+        </div>
       </div>
     </div>
   </section>
