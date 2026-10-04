@@ -35,12 +35,7 @@
 html{scroll-behavior:smooth;scroll-padding-top:var(--topo);-webkit-text-size-adjust:100%}
 body{
   margin:0;color:var(--tinta);font-family:var(--corpo);font-size:15px;line-height:1.7;overflow-x:hidden;
-  background-color:var(--creme);
-  background-image:
-    linear-gradient(rgba(82,26,30,.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(82,26,30,.07) 1px, transparent 1px);
-  background-size:56px 56px;
-  background-position:-1px -1px;
+  background:var(--creme);
 }
 body.travado{overflow:hidden}
 img{max-width:100%;display:block}
@@ -400,7 +395,7 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   .numeros li:nth-child(n+3){border-top:1px solid var(--linha)}
 }
 @media (max-width:640px){
-  body{font-size:14.5px;background-size:44px 44px}
+  body{font-size:14.5px}
   .secao{padding:72px 0}
   .capa-botoes .btn{flex:1 1 100%}
   .capa-botoes .link-seta{margin:0 auto}
