@@ -171,7 +171,16 @@ button,input,textarea{font:inherit;color:inherit}
 .pilulas li:first-child{background:var(--azul);border-color:var(--azul);color:var(--vinho)}
 
 /* Marcas que confiam: círculos que correm */
-.marcas-faixa{padding:64px 0 24px;border-top:1px solid var(--linha);margin-top:96px}
+.marcas-faixa{padding:64px 0 40px}
+/* Fundo listrado do "Oi, eu sou a Maria Clara": listras verticais em Ice Melt e Merlot.
+   O texto fica num cartão claro por cima para continuar fácil de ler. */
+.sobre-listrado{
+  background:repeating-linear-gradient(90deg,
+    var(--azul) 0 38px, #c8d8e8 38px 40px,
+    var(--vinho) 40px 78px, #5f2227 78px 80px);
+}
+.sobre-listrado .sobre-texto{background:var(--creme-claro);border-radius:var(--raio);padding:44px 44px 40px;box-shadow:0 24px 50px rgba(26,9,5,.18)}
+.sobre-listrado .sobre-foto{box-shadow:0 24px 50px rgba(26,9,5,.22)}
 .marcas-faixa h3{text-align:center;font-family:var(--corpo);font-size:11.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--tinta-suave);margin-bottom:28px}
 .marcas-mascara{overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .marcas-trilho{display:flex;width:max-content;animation:correr 55s linear infinite}
@@ -387,6 +396,7 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   .capa-foto::before{inset:auto -8px -12px auto}
   .sobre-grade,.destaques-grade,.servicos-grade,.como-grade,.porque-grade,.contato-grade{grid-template-columns:1fr;gap:40px}
   .sobre-foto{max-width:420px}
+  .sobre-listrado .sobre-texto{padding:32px 24px 28px}
   .porque-foto{max-width:380px}
   .processo{position:static}
   .feedbacks{grid-template-columns:repeat(2, minmax(0,1fr))}
@@ -475,7 +485,7 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   </ul>
 
   <!-- ============ 2. SOBRE + MARCAS ============ -->
-  <section class="secao" id="sobre" aria-labelledby="sobre-titulo">
+  <section class="secao sobre-listrado" id="sobre" aria-labelledby="sobre-titulo">
     <div class="container">
       <div class="sobre-grade">
         <!-- FOTO DO SOBRE: troque por <img src="imagens/sobre.jpg" alt="..."> dentro da div abaixo -->
@@ -495,7 +505,11 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
           </ul>
         </div>
       </div>
+    </div>
+  </section>
 
+  <section class="marcas-secao" aria-label="Marcas que confiam no meu trabalho">
+    <div class="container">
       <div class="marcas-faixa revelar" id="marcas">
         <h3>Marcas que confiam no meu trabalho</h3>
         <!-- Os nomes vêm do array "marcas" no script -->
