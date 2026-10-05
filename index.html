@@ -373,7 +373,9 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 .fb-onda{flex:1;height:22px;background:repeating-linear-gradient(90deg,#8696a0 0 2px,transparent 2px 5px);-webkit-mask:linear-gradient(180deg,transparent 15%,#000 15% 85%,transparent 85%);mask:linear-gradient(180deg,transparent 15%,#000 15% 85%,transparent 85%);border-radius:2px}
 .fb-tempo{font-size:10px;opacity:.7;white-space:nowrap}
 .fb-vel{font-size:11px;background:rgba(233,237,239,.15);padding:3px 8px;border-radius:999px}
-.fb-print{display:block;width:100%;height:auto;box-shadow:0 6px 18px rgba(26,9,5,.1)}
+.fb-print{display:block;width:100%;max-width:300px;height:auto;box-shadow:0 6px 18px rgba(26,9,5,.1)}
+.fb-dir .fb-print{align-self:flex-end}
+#fb-centro .fb-print{margin:0 auto}
 .fb-print-vazio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:120px;background:rgba(255,255,255,.82);border:1.5px dashed rgba(82,26,30,.35);text-align:center;padding:16px}
 .fb-print-vazio span{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--vinho)}
 .fb-print-vazio small{font-size:12px;color:var(--tinta-suave)}
@@ -1019,15 +1021,12 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   // PRINTS DOS FEEDBACKS: cada um vira uma imagem no mural, na coluna indicada ("esq", "centro" ou "dir").
   // foto: COLOQUE AQUI o arquivo do print (ex.: "imagens/feedback-01.png"). Vazio mostra um espaço reservado. TROCAR
   var printsFeedback = [
-    { coluna: "esq", foto: "", descricao: "Envio do conteúdo foi rápido" },
-    { coluna: "esq", foto: "", descricao: "MCO Marketing Digital" },
-    { coluna: "esq", foto: "", descricao: "Está em 15 centavos o clique já" },
-    { coluna: "esq", foto: "", descricao: "O vídeo ficou ótimo, muito bom" },
-    { coluna: "centro", foto: "", descricao: "União Vegetal" },
-    { coluna: "dir", foto: "", descricao: "Bf Med" },
-    { coluna: "dir", foto: "", descricao: "Maxfem" },
-    { coluna: "dir", foto: "", descricao: "Mensagem com as notas 10" },
-    { coluna: "dir", foto: "", descricao: "Mensagens de áudio" }
+    { coluna: "esq", foto: "imagens/feedback-mco.png", descricao: "Campanha IAB, MCO Marketing Digital, 5 estrelas: elogia o profissionalismo, o roteiro para aprovação prévia e a entrega rápida e acima das expectativas" },
+    { coluna: "esq", foto: "imagens/feedback-collum.png", descricao: "Suplemento Natural de Colostro para Cães, Collum, 5 estrelas: Adorei os conteúdos!" },
+    { coluna: "centro", foto: "imagens/feedback-uniao-vegetal.png", descricao: "União Vegetal, UGCs Natural Tech, 5 estrelas: realizou um trabalho excelente e muito cuidadoso" },
+    { coluna: "dir", foto: "imagens/feedback-bfmed.png", descricao: "Bf Med, 5 estrelas: ótima profissional, conseguiu transmitir a mensagem de forma precisa e objetiva" },
+    { coluna: "dir", foto: "imagens/feedback-maxfem.png", descricao: "Campanha de Suplemento para Candidíase, Maxfem, 5 estrelas: rápida, criativa e com interesse real em entender a marca" },
+    { coluna: "dir", foto: "imagens/feedback-whatsapp.jpg", descricao: "Mensagem no WhatsApp: ficou sensacional, nota 10 em copy, edição, roteiro e efeitos" }
   ];
 
   // DEPOIMENTOS: TROCAR pelo texto real das mensagens das marcas
