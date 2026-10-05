@@ -350,7 +350,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 .fb-titulo h2{font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(2.6rem, 4.6vw, 3.8rem);line-height:1;color:var(--vinho)}
 .fb-estrelas{font-size:26px;letter-spacing:.2em;color:#2f4139;margin-top:4px}
 .fb-foto{width:100%;max-width:340px;aspect-ratio:3/4;border-radius:var(--raio);background:linear-gradient(170deg,rgba(255,255,255,.55) 0%,rgba(228,214,206,.85) 60%,#c96a7d 100%)}
-.fb-foto-img{width:100%;max-width:360px;display:block}
+.fb-foto-img{width:100%;max-width:360px;height:auto;display:block;margin-top:-6px;filter:drop-shadow(0 14px 22px rgba(26,9,5,.14))}
 .fb-card{margin:0;background:#fff;padding:16px 18px 18px;box-shadow:0 6px 18px rgba(26,9,5,.08)}
 .fb-card figcaption{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .fb-card figcaption strong{display:block;font-size:12.5px;font-weight:700;color:var(--tinta);line-height:1.2}
@@ -704,9 +704,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
           Salve como imagens/feedback.png (PNG com fundo transparente) e troque a div abaixo por:
           <img class="fb-foto-img" src="imagens/feedback.png" alt="Maria Clara Filgueiras comemorando de braços para cima com o celular na mão">
         -->
-        <div class="midia fb-foto revelar" style="--atraso:.1s" role="img" aria-label="Espaço para a foto de Maria Clara comemorando">
-          <span class="midia-legenda">foto recortada da creator</span>
-        </div>
+        <img class="fb-foto-img revelar" style="--atraso:.1s" src="imagens/feedback.png" alt="Maria Clara Filgueiras comemorando de braços para cima, segurando o celular e fazendo sinal de paz" width="720" height="900" loading="lazy">
         <div class="fb-col" id="fb-centro"></div>
       </div>
 
