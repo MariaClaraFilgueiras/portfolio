@@ -38,6 +38,8 @@
     "antes de gravar": ["before filming", "antes de grabar"],
     "Entrega em até 72h úteis": ["Delivery within 72 business hours", "Entrega en hasta 72 h hábiles"],
     "com uma alteração inclusa": ["with one revision included", "con un ajuste incluido"],
+    "“Está em 15 centavos o clique, maravilhoso”": ["“It's at 15 cents per click, wonderful”", "“Está en 15 centavos por clic, maravilloso”"],
+    "feedback de cliente": ["client feedback", "opinión de cliente"],
     "Vídeo UGC": ["UGC video", "Video UGC"],
     "Roteiros estratégicos": ["Strategic scripts", "Guiones estratégicos"],
     "Criativos para anúncio": ["Ad creatives", "Creativos para anuncios"],
