@@ -221,6 +221,29 @@ button,input,textarea{font:inherit;color:inherit}
    3. DESTAQUES
    ========================================================= */
 .destaques-grade{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:center}
+/* Conteúdo destaque no estilo do Canva: verde escuro, título em serifa clara e logo MCF no nude */
+.destaque-verde{background:#2f4139;color:var(--creme);padding:96px 0 0;overflow:hidden}
+.destaque-verde .destaques-grade{align-items:start}
+.destaque-titulo{display:flex;align-items:center;gap:30px;font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(2.8rem, 5.6vw, 4.6rem);line-height:.95;color:var(--creme);margin-bottom:36px}
+.destaque-titulo svg{width:clamp(44px, 5vw, 66px);height:auto;flex-shrink:0}
+.destaque-titulo span{text-align:center}
+.destaque-verde .destaque-texto p{margin-top:28px;font-size:clamp(15px, 1.4vw, 18px);line-height:1.7;letter-spacing:.02em;text-align:justify;hyphens:none;color:var(--creme)}
+.destaque-verde .destaque-texto strong{color:var(--creme);font-weight:700}
+.destaque-verde .destaque-texto{padding-bottom:96px}
+.destaque-lado{display:flex;flex-direction:column;align-self:stretch}
+.destaque-verde .destaque-videos{gap:clamp(24px, 5vw, 80px);padding:0 clamp(0px, 3vw, 40px)}
+.destaque-verde .video-tipo,.destaque-verde .video-legenda,.destaque-verde .midia-legenda{display:none}
+.destaque-verde .video-capa{border-radius:10px;box-shadow:none}
+.destaque-verde .play{background:rgba(60,60,60,.7)}
+.destaque-verde .play::after{border-left-color:#fff}
+.destaque-logo{margin-top:auto;margin-right:calc((100vw - min(1180px, 100vw - 32px)) / -2);margin-left:clamp(0px, 14vw, 180px);background:#e3d6cd;display:grid;place-items:center;padding:44px 24px 40px}
+.destaque-logo .monograma{position:relative;display:inline-grid;place-items:center;line-height:1}
+.destaque-logo .monograma b{color:#2f4139}
+.destaque-logo .monograma small{color:#2f4139;background:#e3d6cd}
+@media (max-width:1000px){
+  .destaque-verde .destaque-texto{padding-bottom:0}
+  .destaque-logo{margin:48px -16px 0;}
+}
 .destaque-texto p{margin-top:18px;color:var(--tinta-suave)}
 .destaque-texto strong{color:var(--tinta)}
 .destaque-videos{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:20px}
@@ -535,16 +558,23 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   </section>
 
   <!-- ============ 3. CONTEÚDOS EM DESTAQUE ============ -->
-  <section class="secao fundo-azul" id="destaques" aria-labelledby="destaques-titulo">
+  <section class="destaque-verde fundo-escuro" id="destaques" aria-labelledby="destaques-titulo">
     <div class="container destaques-grade">
       <div class="destaque-texto revelar">
-        <p class="rotulo">Conteúdos em destaque</p>
-        <h2 class="titulo" id="destaques-titulo">Roteiro certo, <em>resultado</em> certo</h2>
-        <p>A <strong>estratégia</strong> para um conteúdo UGC de sucesso é fazer um <strong>bom roteiro</strong>. A depender de onde será publicado, seja no <strong>Instagram, TikTok, Ads ou E-commerce</strong>, a linguagem precisa ser diferente para cumprir seu objetivo: <strong>educar, gerar conexão ou conversão.</strong></p>
-        <p>Os conteúdos ao lado foram feitos para <strong>ADS</strong>: mostrar que existem outros tipos de cerveja sem álcool além da tradicional verdinha, e avisar a todos os paulistas que a melhor kombucha já está disponível em São Paulo.</p>
+        <h2 class="destaque-titulo" id="destaques-titulo">
+          <svg viewBox="0 0 40 40" fill="currentColor" aria-hidden="true"><path d="M20 0l2.6 13.2L33 4.6l-7.4 11.2L40 20l-14.4 4.2L33 35.4l-10.4-8.6L20 40l-2.6-13.2L7 35.4l7.4-11.2L0 20l14.4-4.2L7 4.6l10.4 8.6z"/></svg>
+          <span>Conteúdo<br>destaque</span>
+        </h2>
+        <p>A <strong>estratégia</strong> para um conteúdo UGC de sucesso, é fazer um <strong>bom roteiro</strong>. A depender de onde será publicado, seja no <strong>Instagram, Tik Tok, Ads, ou E-commerce</strong>, a <strong>linguagem precisa ser diferente</strong> para cumprir seu objetivo, seja o de <strong>educar, gerar conexão ou conversão.</strong></p>
+        <p>Os conteúdos ao lado foram feitos para <strong>ADS</strong>, visando o que cada cliente queria, mostrar que existem outros tipos de cerveja sem álcool, além da tradicional verdinha, e avisar à todos os paulistas que a melhor kombucha já está disponível em São Paulo.</p>
       </div>
-      <!-- Os vídeos vêm do array "destaques" no script (link do vídeo e capa ficam lá) -->
-      <div class="destaque-videos" id="destaques-grade"></div>
+      <div class="destaque-lado">
+        <!-- Os vídeos vêm do array "destaques" no script (link do vídeo e capa ficam lá) -->
+        <div class="destaque-videos" id="destaques-grade"></div>
+        <div class="destaque-logo revelar" style="--atraso:.2s">
+          <p class="monograma" role="img" aria-label="Logo: Maria Clara Filgueiras"><b aria-hidden="true">MCF</b><small aria-hidden="true">Maria Clara Filgueiras</small></p>
+        </div>
+      </div>
     </div>
   </section>
 
