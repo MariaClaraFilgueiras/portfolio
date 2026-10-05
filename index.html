@@ -292,6 +292,29 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
 .galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .galeria li .midia{aspect-ratio:1/1;border-radius:var(--raio)}
 
+/* Galeria no estilo do Canva: verde escuro, título claro, faixa nude com a frase e foto grande */
+.galeria-verde{background:#2f4139;color:var(--creme);padding:0 0 72px;scroll-margin-top:var(--topo)}
+.galeria-abertura{display:grid;grid-template-columns:.9fr 1.1fr;align-items:stretch;padding:12px 0 0}
+.galeria-esq{display:flex;flex-direction:column}
+.galeria-titulo{flex:1;display:flex;align-items:center;padding:64px clamp(24px, 4vw, 64px);font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(3.2rem, 7vw, 6.4rem);line-height:1.02;color:#e4d6ce}
+.galeria-frase{background:#e4d6ce;color:var(--tinta);padding:64px clamp(24px, 6vw, 96px);margin-bottom:64px;text-align:center;font-style:italic;font-weight:700;text-transform:uppercase;font-size:clamp(13px, 1.25vw, 17px);line-height:1.5;letter-spacing:.02em}
+.galeria-grande{border:6px solid #e4d6ce;border-right:0;align-self:stretch;min-height:680px;position:relative;overflow:hidden}
+.galeria-grande img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.galeria-verde .galeria{display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:18px 22px;margin-top:72px}
+.galeria-verde .galeria li .midia{border-radius:0;box-shadow:0 14px 26px rgba(0,0,0,.28)}
+.galeria-verde .foto-retangulo .midia{aspect-ratio:3/4}
+.galeria-verde .galeria li.foto-circulo .midia{aspect-ratio:1/1;border-radius:50%}
+.galeria-verde .foto-circulo .midia-legenda{margin:0 auto 18%}
+@media (max-width:1000px){
+  .galeria-abertura{grid-template-columns:1fr}
+  .galeria-titulo{padding:56px 20px 40px}
+  .galeria-frase{margin-bottom:0;padding:40px 24px}
+  .galeria-grande{min-height:0;aspect-ratio:4/5;margin:0 16px;border-right:6px solid #e4d6ce}
+}
+@media (max-width:640px){
+  .galeria-verde .galeria{grid-template-columns:repeat(2, minmax(0,1fr));gap:14px;margin-top:48px}
+}
+
 /* =========================================================
    5. SERVIÇOS
    ========================================================= */
@@ -594,14 +617,20 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   </section>
 
   <!-- ============ GALERIA DE FOTOS ============ -->
-  <section class="secao" id="fotos" aria-label="Fotos que vendem">
-    <div class="container">
-      <div class="galeria-topo revelar">
-        <h3 class="titulo" style="font-size:clamp(2rem, 4vw, 3rem)">Fotos que <em>vendem</em></h3>
-        <p class="citacao">"Fotos que comunicam o seu produto da maneira certa ganham o coração do cliente."</p>
+  <section class="galeria-verde fundo-escuro" id="fotos" aria-labelledby="fotos-titulo">
+    <div class="galeria-abertura">
+      <div class="galeria-esq">
+        <h2 class="galeria-titulo revelar" id="fotos-titulo">Galeria de fotos</h2>
+        <p class="galeria-frase revelar" style="--atraso:.1s">"Fotos que comunicam o seu produto da maneira certa, ganha o coração do cliente”</p>
       </div>
-      <!-- FOTOS DA GALERIA: os arquivos ficam no array "galeria" no script -->
-      <ul class="galeria revelar" id="galeria"></ul>
+      <!-- FOTO GRANDE DA GALERIA: o arquivo fica em imagens/galeria-destaque.jpg -->
+      <div class="galeria-grande revelar" style="--atraso:.15s">
+        <img src="imagens/galeria-destaque.jpg" alt="Maria Clara Filgueiras deitada na grama, de olhos fechados, com flores amarelas no cabelo" width="1120" height="1400" loading="lazy">
+      </div>
+    </div>
+    <div class="container">
+      <!-- FOTOS DA GALERIA: os arquivos ficam no array "galeria" no script (4 retangulares em cima e 4 redondas embaixo) -->
+      <ul class="galeria" id="galeria"></ul>
     </div>
   </section>
 
@@ -915,13 +944,16 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   ];
 
   // GALERIA DE FOTOS: seis fotos quadradas. foto: "imagens/foto-01.jpg" (vazio mostra o degradê). TROCAR
+  // forma: "retangulo" (fileira de cima) ou "circulo" (fileira de baixo)
   var galeria = [
-    { foto: "", descricao: "Foto de produto 01" },
-    { foto: "", descricao: "Foto de produto 02" },
-    { foto: "", descricao: "Foto de produto 03" },
-    { foto: "", descricao: "Foto de produto 04" },
-    { foto: "", descricao: "Foto de produto 05" },
-    { foto: "", descricao: "Foto de produto 06" }
+    { foto: "", forma: "retangulo", descricao: "Foto 01: vestido longo vinho" },
+    { foto: "", forma: "retangulo", descricao: "Foto 02: retrato com colares dourados" },
+    { foto: "", forma: "retangulo", descricao: "Foto 03: suco na varanda" },
+    { foto: "", forma: "retangulo", descricao: "Foto 04: hidratantes Rosas e Damasco" },
+    { foto: "", forma: "circulo", descricao: "Foto 05: perfume" },
+    { foto: "", forma: "circulo", descricao: "Foto 06: BioColl" },
+    { foto: "", forma: "circulo", descricao: "Foto 07: Solar Muse na praia" },
+    { foto: "", forma: "circulo", descricao: "Foto 08: Imunofem" }
   ];
 
   // SERVIÇOS: os cards de "O que podemos criar juntos?"
@@ -1082,9 +1114,11 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
 
   // Galeria de fotos
   document.getElementById("galeria").innerHTML = galeria.map(function (g, i) {
-    return g.foto
-      ? '<li><div class="midia"><img src="' + esc(g.foto) + '" alt="' + esc(g.descricao) + '" loading="lazy" width="800" height="800"></div></li>'
-      : '<li><div class="midia" style="background:' + degrades[i % degrades.length] + '" role="img" aria-label="Espaço para ' + esc(g.descricao.toLowerCase()) + '"><span class="midia-legenda">foto 1:1</span></div></li>';
+    var forma = g.forma === "circulo" ? "circulo" : "retangulo";
+    var miolo = g.foto
+      ? '<div class="midia"><img src="' + esc(g.foto) + '" alt="' + esc(g.descricao) + '" loading="lazy" width="800" height="1000"></div>'
+      : '<div class="midia" style="background:' + degrades[i % degrades.length] + '" role="img" aria-label="Espaço para a ' + esc(g.descricao.toLowerCase()) + '"><span class="midia-legenda">foto ' + (i + 1) + "</span></div>";
+    return '<li class="foto-' + forma + ' revelar" style="--atraso:' + ((i % 4) * 0.08) + 's">' + miolo + "</li>";
   }).join("");
 
   // Serviços
