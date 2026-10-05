@@ -28,6 +28,8 @@
       "I'm Maria Clara Filgueiras. I create strategic, authentic content that helps your brand sell more and truly connect with its ideal customer.",
       "Soy Maria Clara Filgueiras. Creo contenidos con estrategia y autenticidad para que tu marca venda más y conecte de verdad con su cliente ideal."],
     "15 marcas parceiras": ["15 partner brands", "15 marcas aliadas"],
+    "+100 marcas trabalhadas": ["100+ brands worked with", "+100 marcas trabajadas"],
+    "+2MI views no Instagram": ["2M+ views on Instagram", "+2 M de views en Instagram"],
     "10 nichos": ["10 niches", "10 nichos"],
     "4 anos de marketing": ["4 years in marketing", "4 años de marketing"],
     "Quero criar com a Maria Clara": ["Create with Maria Clara", "Quiero crear con Maria Clara"],
