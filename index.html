@@ -81,6 +81,7 @@ button,input,textarea{font:inherit;color:inherit}
 
 .secao{padding:96px 0}
 .fundo-azul{background:var(--azul)}
+.fundo-nude{background:#e4d6ce}
 .fundo-vinho{background:var(--vinho);color:var(--creme)}
 .cartao{background:var(--creme-claro);border:1px solid var(--linha);border-radius:var(--raio)}
 
@@ -579,7 +580,7 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   </section>
 
   <!-- ============ 4. TRABALHOS POR NICHO ============ -->
-  <section class="secao" id="trabalhos" aria-labelledby="trabalhos-titulo">
+  <section class="secao fundo-nude" id="trabalhos" aria-labelledby="trabalhos-titulo">
     <div class="container">
       <div class="cabecalho revelar">
         <p class="rotulo">Categorias</p>
@@ -589,8 +590,13 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
       <div class="filtros revelar" id="filtros" role="group" aria-label="Filtrar trabalhos por nicho"></div>
       <div id="nichos"></div>
       <p class="aviso-filtro" id="aviso-filtro" aria-live="polite"></p>
+    </div>
+  </section>
 
-      <div class="galeria-topo revelar" style="margin-top:88px">
+  <!-- ============ GALERIA DE FOTOS ============ -->
+  <section class="secao" id="fotos" aria-label="Fotos que vendem">
+    <div class="container">
+      <div class="galeria-topo revelar">
         <h3 class="titulo" style="font-size:clamp(2rem, 4vw, 3rem)">Fotos que <em>vendem</em></h3>
         <p class="citacao">"Fotos que comunicam o seu produto da maneira certa ganham o coração do cliente."</p>
       </div>
