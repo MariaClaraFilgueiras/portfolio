@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#521a1e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,700;1,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,700;1,800&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
 /* =========================================================
    PALETA E BASE
@@ -401,6 +401,40 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 @media (max-width:1000px){.incluso-grade{grid-template-columns:repeat(2, minmax(0,1fr));gap:56px 28px}}
 @media (max-width:640px){.incluso-grade{grid-template-columns:1fr;gap:56px}.incluso-canva{padding:56px 0 64px}.incluso-titulo{margin-bottom:44px}}
 
+/* Por que investir em UGC no estilo do Canva: bege, anéis atrás dos números, setas e foto sem fundo */
+.ugc-canva{background:#e4d6ce;padding:56px 0 72px;overflow:hidden;scroll-margin-top:var(--topo)}
+.ugc-grade{display:grid;grid-template-columns:1fr 400px;gap:8px;align-items:end}
+.ugc-titulo{text-align:center;font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(2rem, 3.6vw, 3rem);line-height:1;color:var(--tinta)}
+.ugc-linha{display:block;width:min(46%, 540px);height:2px;background:#4a4a46;margin:22px auto 26px}
+.ugc-intro{font-size:clamp(15px, 1.5vw, 19px);line-height:1.7;letter-spacing:.03em;text-align:justify;hyphens:none;color:var(--tinta)}
+.ugc-dados{display:grid;grid-template-columns:1fr 1fr .9fr;gap:28px;align-items:center;margin-top:40px}
+.ugc-dado{position:relative;font-size:clamp(15px, 1.45vw, 18px);line-height:1.75;letter-spacing:.02em;text-align:justify;hyphens:none;color:var(--tinta);padding:24px 0}
+.ugc-dado::before{
+  content:"";position:absolute;z-index:-1;left:50%;top:50%;width:min(300px, 92%);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:conic-gradient(from 0deg, #c7a7a5 0 27%, #b9b2a9 27% 100%);opacity:.75;
+  -webkit-mask:radial-gradient(circle, transparent 54%, #000 55%);mask:radial-gradient(circle, transparent 54%, #000 55%);
+}
+.ugc-dados{position:relative;z-index:0}
+.ugc-dado strong{font-weight:800}
+.ugc-setas{display:grid;gap:6px;justify-items:start}
+.ugc-seta{display:flex;align-items:center;gap:22px;font-weight:800;text-transform:uppercase;font-size:clamp(13px, 1.3vw, 16px);line-height:1.3;color:var(--tinta);text-align:center}
+.ugc-seta svg{width:62px;height:62px;flex-shrink:0}
+.ugc-cima svg{fill:#4c1a20}
+.ugc-baixo svg{fill:#2f4139}
+.ugc-vendas{font-family:"Caveat", var(--script, cursive);font-weight:600;font-size:clamp(2.2rem, 3.6vw, 3rem);line-height:1;color:var(--tinta);transform:rotate(-8deg);margin:6px 0 6px 40px}
+.ugc-foto{width:118%;max-width:none;height:auto;align-self:end;margin-left:-9%}
+@media (max-width:1000px){
+  .ugc-grade{grid-template-columns:1fr}
+  .ugc-foto{width:100%;max-width:340px;margin-left:0;justify-self:center}
+  .ugc-dados{grid-template-columns:1fr 1fr}
+  .ugc-setas{grid-column:1 / -1;justify-items:center}
+}
+@media (max-width:640px){
+  .ugc-dados{grid-template-columns:1fr;gap:12px}
+  .ugc-dado{padding:40px 10px}
+  .ugc-dado::before{width:230px}
+}
+
 /* Processo criativo no estilo do Canva: foto à esquerda, nude à direita, faixa verde arredondada */
 .processo-canva{display:grid;grid-template-columns:.85fr 1.15fr;background:#e4d6ce;padding-left:48px;scroll-margin-top:var(--topo)}
 .processo-foto{position:relative;min-height:640px}
@@ -767,34 +801,26 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     </div>
   </section>
 
-  <!-- ============ 7. POR QUE INVESTIR EM UGC ============ -->
-  <section class="secao fundo-azul" id="por-que-ugc" aria-labelledby="porque-titulo">
+  <!-- ============ 7. POR QUE INVESTIR EM UGC (igual ao Canva) ============ -->
+  <section class="ugc-canva" id="por-que-ugc" aria-labelledby="porque-titulo">
     <div class="container">
-      <div class="porque-grade">
-        <div class="revelar">
-          <p class="rotulo">Por que UGC</p>
-          <h2 class="titulo" id="porque-titulo">Por que investir em <em>UGC</em>?</h2>
-          <p>Com a crescente demanda por verdade, autenticidade e confiança (especialmente entre a geração Z), o <strong>User Generated Content (UGC)</strong> surgiu como uma estratégia para <strong>humanizar as marcas</strong>. Esse conteúdo destaca diferenciais, benefícios e valores, fortalecendo a credibilidade e gerando mais engajamento por meio de comunicações reais e autênticas.</p>
-          <div class="estatisticas">
-            <div class="cartao estatistica">
-              <span class="num" data-contador data-alvo="90" data-prefixo="+" data-sufixo="%">+90%</span>
-              <p>dos clientes sentem mais <strong>confiança</strong> com conteúdo UGC do que com anúncio tradicional de venda explícita.</p>
-            </div>
-            <div class="cartao estatistica">
-              <span class="num" data-contador data-alvo="80" data-prefixo="+" data-sufixo="%">+80%</span>
-              <p>das pessoas sentem mais <strong>confiança</strong> em marcas que usam conteúdo UGC do que em influenciadores digitais.</p>
+      <div class="ugc-grade">
+        <div class="ugc-texto">
+          <h2 class="ugc-titulo revelar" id="porque-titulo">Por que investir em UGC ?</h2>
+          <span class="ugc-linha" aria-hidden="true"></span>
+          <p class="ugc-intro revelar">Com a crescente demanda por verdade, autenticidade e confiança (especialmente entre a geração Z) o User-Generated Content (UGC) surgiu como uma estratégia para humanizar as marcas. Esse tipo de conteúdo orgânico destaca diferenciais, benefícios e valores, fortalecendo a credibilidade e gerando maior engajamento com o público por meio de comunicações reais e autênticas.</p>
+          <div class="ugc-dados">
+            <p class="ugc-dado revelar">Mais de <strong><span data-contador data-alvo="90" data-sufixo="%">90%</span></strong> dos clientes sentem mais <strong>confiança</strong> com conteúdo <strong>UGC</strong> do que anúncio tradicional de venda explícita.</p>
+            <p class="ugc-dado revelar" style="--atraso:.1s">Mais de <strong><span data-contador data-alvo="80" data-sufixo="%">80%</span></strong> das pessoas sentem mais <strong>confiança</strong> em marcas que usam conteúdo <strong>UGC</strong> do que influenciadores digitais.</p>
+            <div class="ugc-setas revelar" style="--atraso:.2s">
+              <p class="ugc-seta ugc-cima"><svg viewBox="0 0 60 60" aria-hidden="true"><path d="M30 2 58 30H42v28H18V30H2z"/></svg><span>Mais<br>engajamento</span></p>
+              <p class="ugc-vendas">mais vendas</p>
+              <p class="ugc-seta ugc-baixo"><svg viewBox="0 0 60 60" aria-hidden="true"><path d="M30 58 2 30h16V2h24v28h16z"/></svg><span>Baixo custo</span></p>
             </div>
           </div>
-          <ul class="beneficios" aria-label="Benefícios">
-            <li>Mais engajamento</li>
-            <li>Baixo custo</li>
-            <li>Mais vendas</li>
-          </ul>
         </div>
-        <!-- FOTO: troque por <img src="imagens/ugc.jpg" alt="..."> dentro da div abaixo -->
-        <div class="midia porque-foto revelar" style="--atraso:.1s" role="img" aria-label="Espaço para uma foto de Maria Clara Filgueiras">
-          <span class="midia-legenda">foto da creator 4:5</span>
-        </div>
+        <!-- FOTO: o arquivo fica em imagens/ugc.png (PNG sem fundo) -->
+        <img class="ugc-foto revelar" style="--atraso:.15s" src="imagens/ugc.png" alt="Maria Clara Filgueiras sorrindo, de blusa lilás plissada, com as mãos abertas para os lados" width="720" height="900" loading="lazy">
       </div>
       <ul class="fontes" id="fontes" aria-label="Matérias sobre o mercado de UGC"></ul>
       <div class="frase-final revelar">
