@@ -341,6 +341,51 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 .servico h3{font-family:var(--serifa);font-weight:700;font-size:23px;line-height:1.1;margin-top:6px}
 .servico p{font-size:13.5px;color:var(--tinta-suave);margin-top:8px;line-height:1.6}
 
+/* Feedbacks no estilo do Canva: papel de parede de folhas, cartões e prints de conversa, faixa de figos */
+.feedbacks-canva{background:#f1ede3 url(imagens/fundo-folhas.jpg) center top/cover;padding:48px 0 0;scroll-margin-top:var(--topo)}
+.fb-mural{width:min(1180px, 100% - 32px);margin:0 auto;display:grid;grid-template-columns:1fr 1.05fr 1fr;gap:22px;align-items:start;padding-bottom:40px}
+.fb-col{display:flex;flex-direction:column;gap:18px}
+.fb-centro{align-items:center}
+.fb-titulo{background:#e4d6ce;padding:18px 44px 14px;text-align:center}
+.fb-titulo h2{font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(2.6rem, 4.6vw, 3.8rem);line-height:1;color:var(--vinho)}
+.fb-estrelas{font-size:26px;letter-spacing:.2em;color:#2f4139;margin-top:4px}
+.fb-foto{width:100%;max-width:340px;aspect-ratio:3/4;border-radius:var(--raio);background:linear-gradient(170deg,rgba(255,255,255,.55) 0%,rgba(228,214,206,.85) 60%,#c96a7d 100%)}
+.fb-foto-img{width:100%;max-width:360px;display:block}
+.fb-card{margin:0;background:#fff;padding:16px 18px 18px;box-shadow:0 6px 18px rgba(26,9,5,.08)}
+.fb-card figcaption{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fb-card figcaption strong{display:block;font-size:12.5px;font-weight:700;color:var(--tinta);line-height:1.2}
+.fb-logo{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid #ddd;font-size:10px;font-weight:700;color:var(--vinho);background:#faf7f4}
+.fb-nota{display:block;font-size:11px;color:#8a8a8a;margin-top:2px}
+.fb-card blockquote{margin:0;font-size:12px;line-height:1.65;color:#7a7a7a}
+.fb-card-pequeno{max-width:300px}
+.fb-centro .fb-card-pequeno{align-self:center}
+.fb-dir .fb-card-pequeno{align-self:flex-end}
+.fb-chat{display:flex;flex-direction:column;gap:6px}
+.fb-chat p{font-size:12.5px;line-height:1.5;padding:8px 12px;position:relative}
+.fb-chat time{display:inline-block;font-size:10px;margin-left:8px;opacity:.65;float:right;margin-top:6px}
+.fb-claro p{background:#fff;color:var(--tinta);border:1px solid #e6e6e6}
+.fb-largo p{font-size:11.5px}
+.fb-escuro p{background:#1f2c33;color:#e9edef}
+.fb-whats p{font-size:13px}
+.fb-mencao{color:#53bdeb}
+.fb-audio{display:flex;align-items:center;gap:12px;background:#1f2c33;color:#e9edef;padding:12px 16px;border-radius:2px}
+.fb-play{width:0;height:0;border-style:solid;border-width:10px 0 10px 16px;border-color:transparent transparent transparent #e9edef;flex-shrink:0}
+.fb-onda{flex:1;height:22px;background:repeating-linear-gradient(90deg,#8696a0 0 2px,transparent 2px 5px);-webkit-mask:linear-gradient(180deg,transparent 15%,#000 15% 85%,transparent 85%);mask:linear-gradient(180deg,transparent 15%,#000 15% 85%,transparent 85%);border-radius:2px}
+.fb-tempo{font-size:10px;opacity:.7;white-space:nowrap}
+.fb-vel{font-size:11px;background:rgba(233,237,239,.15);padding:3px 8px;border-radius:999px}
+.fb-print{display:block;width:100%;height:auto;box-shadow:0 6px 18px rgba(26,9,5,.1)}
+.fb-print-vazio{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:120px;background:rgba(255,255,255,.82);border:1.5px dashed rgba(82,26,30,.35);text-align:center;padding:16px}
+.fb-print-vazio span{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--vinho)}
+.fb-print-vazio small{font-size:12px;color:var(--tinta-suave)}
+#fb-centro{width:100%;max-width:320px}
+.faixa-figos{height:150px;background:url(imagens/faixa-figos.jpg) left center/auto 100% repeat-x}
+@media (max-width:1000px){
+  .fb-mural{grid-template-columns:1fr;max-width:560px}
+  .fb-centro{order:-1}
+  .fb-card-pequeno,.fb-dir .fb-card-pequeno{max-width:none;align-self:stretch}
+  .faixa-figos{height:110px}
+}
+
 /* =========================================================
    6. COMO FUNCIONA (processo criativo + etapas)
    ========================================================= */
@@ -519,9 +564,8 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     <ul class="nav-lista" id="nav-lista">
       <li><a href="#sobre">Sobre</a></li>
       <li><a href="#trabalhos">Trabalhos</a></li>
-      <li><a href="#servicos">Serviços</a></li>
       <li><a href="#como-funciona">Como funciona</a></li>
-      <li><a href="#depoimentos">Depoimentos</a></li>
+      <li><a href="#feedbacks">Feedbacks</a></li>
       <li><a href="#contato" class="nav-cta">Trabalhe comigo</a></li>
     </ul>
   </nav>
@@ -642,19 +686,31 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     </div>
   </section>
 
-  <!-- ============ 5. SERVIÇOS ============ -->
-  <section class="secao fundo-azul servicos" id="servicos" aria-labelledby="servicos-titulo">
-    <div class="fita fita-2" aria-hidden="true"><div id="fita-2"></div></div>
-    <div class="fita fita-1" aria-hidden="true"><div id="fita-1"></div></div>
-    <div class="container servicos-grade">
-      <div class="revelar">
-        <h2 class="titulo" id="servicos-titulo">O que podemos <span class="caixa">criar</span> juntos?</h2>
-        <p class="intro">Cada formato tem um objetivo: vender, escalar ou construir marca. Me conta o seu que eu monto o combo certo para a sua marca.</p>
-        <div class="capa-botoes"><a class="btn btn-vinho" href="#contato">Bora criar juntos →</a></div>
+  <!-- ============ 5. FEEDBACKS (igual ao Canva) ============ -->
+  <section class="feedbacks-canva" id="feedbacks" aria-labelledby="feedbacks-titulo">
+    <div class="fb-mural">
+      <!-- Os prints vêm do array "printsFeedback" no script (coluna, arquivo e descrição) -->
+      <div class="fb-col fb-esq" id="fb-esq"></div>
+
+      <div class="fb-col fb-centro">
+        <div class="fb-titulo revelar">
+          <h2 id="feedbacks-titulo">Feedbacks</h2>
+          <p class="fb-estrelas"><span aria-hidden="true">★★★★★</span><span class="visualmente-oculto">Cinco estrelas</span></p>
+        </div>
+        <!--
+          FOTO DO FEEDBACK: no Canva é a foto recortada (sem fundo) de braços para cima segurando o celular.
+          Salve como imagens/feedback.png (PNG com fundo transparente) e troque a div abaixo por:
+          <img class="fb-foto-img" src="imagens/feedback.png" alt="Maria Clara Filgueiras comemorando de braços para cima com o celular na mão">
+        -->
+        <div class="midia fb-foto revelar" style="--atraso:.1s" role="img" aria-label="Espaço para a foto de Maria Clara comemorando">
+          <span class="midia-legenda">foto recortada da creator</span>
+        </div>
+        <div class="fb-col" id="fb-centro"></div>
       </div>
-      <!-- Os serviços vêm do array "servicos" no script -->
-      <ul class="servicos-lista" id="servicos-lista"></ul>
+
+      <div class="fb-col fb-dir" id="fb-dir"></div>
     </div>
+    <div class="faixa-figos" aria-hidden="true"></div>
   </section>
 
   <!-- ============ 6. COMO FUNCIONA ============ -->
@@ -710,20 +766,6 @@ a.video:hover .play::after{border-left-color:var(--creme)}
         <p>"O UGC é o cliente que a sua marca quer alcançar."</p>
         <p>O conteúdo UGC é aquele que conversa com o cliente da sua marca, mostrando a experiência do produto ou serviço por meio de uma narrativa que não só conecta, mas converte.</p>
       </div>
-    </div>
-  </section>
-
-  <!-- ============ 8. DEPOIMENTOS ============ -->
-  <section class="secao" id="depoimentos" aria-labelledby="depo-titulo">
-    <div class="container">
-      <div class="depo-topo revelar">
-        <div>
-          <p class="rotulo">Depoimentos</p>
-          <h2 class="titulo" id="depo-titulo">O que dizem <em>sobre o trabalho</em></h2>
-        </div>
-        <p class="intro">Feedbacks de marcas que viram a diferença de um conteúdo pensado para elas.</p>
-      </div>
-      <div class="feedbacks" id="feedbacks-lista"></div>
     </div>
   </section>
 
@@ -974,6 +1016,20 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     { etiqueta: "Pacote mensal", titulo: "Conteúdo todo mês", descricao: "Uma quantidade fixa de conteúdos por mês, com calendário combinado e prioridade na agenda." }
   ];
 
+  // PRINTS DOS FEEDBACKS: cada um vira uma imagem no mural, na coluna indicada ("esq", "centro" ou "dir").
+  // foto: COLOQUE AQUI o arquivo do print (ex.: "imagens/feedback-01.png"). Vazio mostra um espaço reservado. TROCAR
+  var printsFeedback = [
+    { coluna: "esq", foto: "", descricao: "Envio do conteúdo foi rápido" },
+    { coluna: "esq", foto: "", descricao: "MCO Marketing Digital" },
+    { coluna: "esq", foto: "", descricao: "Está em 15 centavos o clique já" },
+    { coluna: "esq", foto: "", descricao: "O vídeo ficou ótimo, muito bom" },
+    { coluna: "centro", foto: "", descricao: "União Vegetal" },
+    { coluna: "dir", foto: "", descricao: "Bf Med" },
+    { coluna: "dir", foto: "", descricao: "Maxfem" },
+    { coluna: "dir", foto: "", descricao: "Mensagem com as notas 10" },
+    { coluna: "dir", foto: "", descricao: "Mensagens de áudio" }
+  ];
+
   // DEPOIMENTOS: TROCAR pelo texto real das mensagens das marcas
   var feedbacks = [
     { texto: "Espaço para o feedback do Cliente 01. Cole aqui a mensagem que a marca te mandou.", nome: "Cliente 01", marca: "Empresa do Cliente 01" },
@@ -1055,8 +1111,10 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 
   // Fitas da seção de serviços
   var textoFita = repetir("<span>@mariaclarafilgueiras · ugc creator ·</span>", 12);
-  document.getElementById("fita-1").innerHTML = textoFita + textoFita;
-  document.getElementById("fita-2").innerHTML = textoFita + textoFita;
+  if (document.getElementById("fita-1")) {
+    document.getElementById("fita-1").innerHTML = textoFita + textoFita;
+    document.getElementById("fita-2").innerHTML = textoFita + textoFita;
+  }
 
   // Conteúdos em destaque
   document.getElementById("destaques-grade").innerHTML = destaques.map(function (d, i) {
@@ -1130,14 +1188,24 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   }).join("");
 
   // Serviços
-  document.getElementById("servicos-lista").innerHTML = servicos.map(function (s, i) {
+  if (document.getElementById("servicos-lista")) document.getElementById("servicos-lista").innerHTML = servicos.map(function (s, i) {
     return '<li class="cartao servico revelar" style="--atraso:' + ((i % 2) * 0.1) + 's">' +
       '<span class="etiqueta">' + esc(s.etiqueta) + "</span>" +
       "<h3>" + esc(s.titulo) + "</h3><p>" + esc(s.descricao) + "</p></li>";
   }).join("");
 
+  // Prints dos feedbacks
+  printsFeedback.forEach(function (f, i) {
+    var lugar = document.getElementById("fb-" + f.coluna);
+    if (!lugar) return;
+    var html = f.foto
+      ? '<img class="fb-print revelar" style="--atraso:' + ((i % 4) * 0.08) + 's" src="' + esc(f.foto) + '" alt="Print do feedback: ' + esc(f.descricao) + '" loading="lazy">'
+      : '<div class="fb-print fb-print-vazio revelar" style="--atraso:' + ((i % 4) * 0.08) + 's" role="img" aria-label="Espaço para o print do feedback: ' + esc(f.descricao) + '"><span>print ' + String(i + 1).padStart(2, "0") + '</span><small>' + esc(f.descricao) + "</small></div>";
+    lugar.insertAdjacentHTML("beforeend", html);
+  });
+
   // Depoimentos
-  document.getElementById("feedbacks-lista").innerHTML = feedbacks.map(function (f, i) {
+  if (document.getElementById("feedbacks-lista")) document.getElementById("feedbacks-lista").innerHTML = feedbacks.map(function (f, i) {
     return '<figure class="cartao feedback revelar" style="--atraso:' + (i * 0.08) + 's">' +
       '<span class="avatar" aria-hidden="true">' + esc(f.nome.charAt(0)) + "</span>" +
       "<blockquote><p>" + esc(f.texto) + "</p></blockquote>" +
