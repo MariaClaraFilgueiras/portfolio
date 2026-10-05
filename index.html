@@ -183,6 +183,27 @@ button,input,textarea{font:inherit;color:inherit}
 .pilulas li{font-size:13px;font-weight:600;border-radius:999px;padding:10px 18px;background:var(--creme-claro);border:1px solid var(--linha)}
 .pilulas li:first-child{background:var(--azul);border-color:var(--azul);color:var(--vinho)}
 
+/* Sobre no estilo do Canva: foto preto e branco + texto no nude, com assinatura MCF */
+.sobre{display:grid;grid-template-columns:.8fr 1.2fr;background:#e3d6cd;padding:0 0 0 20px;scroll-margin-top:var(--topo)}
+.sobre-foto-pb{position:relative;min-height:640px}
+.sobre-foto-pb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.sobre-conteudo{padding:72px clamp(24px, 6vw, 96px) 64px;display:flex;flex-direction:column;justify-content:center}
+.sobre-hey{text-align:center;font-family:var(--corpo);font-style:italic;font-weight:500;text-transform:uppercase;font-size:clamp(1.7rem, 3.2vw, 2.6rem);line-height:1.1;letter-spacing:.01em;color:var(--vinho)}
+.sobre-linha{display:block;width:min(70%, 420px);height:4px;background:var(--vinho);margin:30px auto 44px}
+.sobre-conteudo p{font-size:clamp(15px, 1.35vw, 18px);line-height:1.75;text-align:justify;hyphens:none;color:var(--tinta);letter-spacing:.02em}
+.sobre-conteudo p + p{margin-top:30px}
+.sobre-conteudo strong{font-weight:700}
+.sobre-conteudo em{color:var(--tinta-suave)}
+.sobre-conteudo .monograma{position:relative;display:inline-grid;place-items:center;align-self:flex-start;margin:34px 0 0 40px;line-height:1}
+.monograma b{font-family:var(--serifa);font-weight:600;font-size:clamp(4.6rem, 8vw, 6.6rem);letter-spacing:-.02em;color:var(--vinho)}
+.monograma small{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:10px;letter-spacing:.62em;text-transform:uppercase;white-space:nowrap;color:var(--vinho);background:#e3d6cd;padding:2px 0 2px .62em}
+@media (max-width:1000px){
+  .sobre{grid-template-columns:1fr;padding:0}
+  .sobre-foto-pb{min-height:0;aspect-ratio:4/5;max-height:80vh}
+  .sobre-conteudo{padding:56px 20px 56px}
+  .sobre-conteudo .monograma{align-self:center;margin-left:0}
+}
+
 /* Marcas que confiam: círculos que correm */
 .marcas-faixa{padding:64px 0 40px}
 .marcas-faixa h3{text-align:center;font-family:var(--corpo);font-size:11.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--tinta-suave);margin-bottom:28px}
@@ -488,26 +509,18 @@ a.video:hover .play{transform:scale(1.1);background:var(--azul)}
   </ul>
 
   <!-- ============ 2. SOBRE + MARCAS ============ -->
-  <section class="secao" id="sobre" aria-labelledby="sobre-titulo">
-    <div class="container">
-      <div class="sobre-grade">
-        <!-- FOTO DO SOBRE: troque por <img src="imagens/sobre.jpg" alt="..."> dentro da div abaixo -->
-        <div class="midia sobre-foto revelar" role="img" aria-label="Espaço para uma foto de Maria Clara Filgueiras">
-          <span class="midia-legenda">foto da creator 4:5</span>
-        </div>
-        <div class="sobre-texto revelar" style="--atraso:.1s">
-          <p class="rotulo" style="margin-top:0">Sobre mim</p>
-          <h2 class="titulo" id="sobre-titulo">Oi, eu sou a <em>Maria Clara</em></h2>
-          <p>Sou uma maranhense inquieta que veio para São Paulo estudar. Trabalho com marketing digital há <strong>4 anos</strong>, onde atuo como <strong>Social Media</strong> e <strong>Copywriter</strong>. Tenho pós graduação em <strong>Moda e Negócios</strong> e sou apaixonada por criar conteúdos reais, com estratégia e autenticidade.</p>
-          <p>Hoje, como UGC creator, quero <strong>realçar as qualidades e os diferenciais da sua marca</strong> e posicioná-la da forma certa, tanto para vender mais como para conectar com o cliente ideal.</p>
-          <p><em>O sucesso de quem trabalha comigo consiste na minha realização enquanto profissional.</em></p>
-          <ul class="pilulas">
-            <li>15 marcas parceiras</li>
-            <li>São Paulo · Brasil</li>
-            <li>Pós em Moda e Negócios</li>
-          </ul>
-        </div>
-      </div>
+  <section class="sobre" id="sobre" aria-labelledby="sobre-titulo">
+    <!-- FOTO DO SOBRE: o arquivo fica em imagens/sobre.jpg. Para trocar, substitua o arquivo mantendo o mesmo nome. -->
+    <div class="sobre-foto-pb revelar">
+      <img src="imagens/sobre.jpg" alt="Foto em preto e branco de Maria Clara Filgueiras sorrindo, olhando por cima do ombro, com a mão no cabelo" width="1120" height="1400" loading="lazy">
+    </div>
+    <div class="sobre-conteudo revelar" style="--atraso:.1s">
+      <h2 class="sobre-hey" id="sobre-titulo">Hey ... muito prazer !</h2>
+      <span class="sobre-linha" aria-hidden="true"></span>
+      <p>Sou uma maranhense inquieta que veio para São Paulo estudar. Trabalho com marketing digital há mais de 3 anos, onde atuo como <strong>Social Media</strong> e <strong>Copywriter</strong>. Tenho Pós-Graduação em <strong>Moda e Negócios</strong>, e sou apaixonada por criar conteúdos reais, com estratégia e autenticidade.</p>
+      <p>Hoje, como UGC Creator, <strong>quero realçar as qualidades e diferenciais da sua marca, e posicioná-la da forma certa, tanto para vender mais, como para conectar com o cliente ideal.</strong></p>
+      <p><em>O sucesso de quem trabalha comigo consiste na minha realização enquanto profissional.</em></p>
+      <p class="monograma" role="img" aria-label="Assinatura: Maria Clara Filgueiras"><b aria-hidden="true">MCF</b><small aria-hidden="true">Maria Clara Filgueiras</small></p>
     </div>
   </section>
 
