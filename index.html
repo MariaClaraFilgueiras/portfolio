@@ -123,6 +123,21 @@ button,input,textarea{font:inherit;color:inherit}
   .nav-lista .nav-cta{margin-top:16px;text-align:center;border-bottom:0}
 }
 
+/* Botão de idiomas PT | EN | ES */
+.idiomas{display:flex;align-items:center;gap:2px;border:1.5px solid var(--vinho);border-radius:999px;padding:3px;flex-shrink:0}
+.idiomas button{border:0;background:transparent;color:var(--vinho);font-size:11.5px;font-weight:700;letter-spacing:.08em;padding:7px 10px;border-radius:999px;cursor:pointer;line-height:1;min-width:34px;min-height:30px;transition:background .2s ease,color .2s ease}
+.idiomas button:hover{background:rgba(82,26,30,.08)}
+.idiomas button[aria-pressed="true"]{background:var(--vinho);color:var(--creme)}
+@media (min-width:1001px){.nav-lista{margin-left:auto}.idiomas{margin-left:20px}}
+@media (max-width:1000px){.idiomas{margin-left:auto;order:2}.nav-botao{order:3}}
+@media (max-width:440px){
+  .nav-dentro{gap:8px}
+  .nav-marca{font-size:19px;letter-spacing:.04em}
+  .idiomas{padding:2px}
+  .idiomas button{padding:6px 6px;min-width:28px;font-size:10.5px;letter-spacing:.04em}
+  .nav-botao{width:42px;height:42px}
+}
+
 /* =========================================================
    1. CAPA
    ========================================================= */
@@ -663,6 +678,12 @@ a.video:hover .play::after{border-left-color:var(--creme)}
       <li><a href="#feedbacks">Feedbacks</a></li>
       <li><a href="#contato" class="nav-cta">Trabalhe comigo</a></li>
     </ul>
+    <!-- Troca de idioma: as traduções ficam em js/idiomas.js -->
+    <div class="idiomas" role="group" aria-label="Idioma / Language / Idioma">
+      <button type="button" data-idioma="pt" aria-pressed="true" lang="pt-BR" title="Português">PT</button>
+      <button type="button" data-idioma="en" aria-pressed="false" lang="en" title="English">EN</button>
+      <button type="button" data-idioma="es" aria-pressed="false" lang="es" title="Español">ES</button>
+    </div>
   </nav>
 </header>
 
@@ -1615,5 +1636,6 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   registrarVisita();
 })();
 </script>
+<script src="js/idiomas.js?v=1"></script>
 </body>
 </html>
