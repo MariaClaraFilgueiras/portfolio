@@ -401,6 +401,35 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 @media (max-width:1000px){.incluso-grade{grid-template-columns:repeat(2, minmax(0,1fr));gap:56px 28px}}
 @media (max-width:640px){.incluso-grade{grid-template-columns:1fr;gap:56px}.incluso-canva{padding:56px 0 64px}.incluso-titulo{margin-bottom:44px}}
 
+/* UGC é o novo mercado mais lucrativo, no estilo do Canva */
+.mercado-canva{display:grid;grid-template-columns:.62fr 1.38fr;background:#e4d6ce;padding-left:32px;scroll-margin-top:var(--topo)}
+.mercado-esq{display:flex;flex-direction:column;background:var(--vinho);color:var(--creme)}
+.mercado-foto{aspect-ratio:4/3.1;background:linear-gradient(160deg,#efe6dc 0%,#c9b5a8 55%,#6e2a2f 100%)}
+.mercado-foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mercado-frase{font-style:italic;font-weight:500;text-transform:uppercase;text-align:center;font-size:clamp(1.25rem, 2.2vw, 1.9rem);line-height:1.4;padding:40px 24px 34px;border-bottom:2px solid rgba(246,239,230,.75)}
+.mercado-texto{padding:40px clamp(20px, 3.4vw, 54px) 56px;font-size:clamp(15px, 1.45vw, 19px);line-height:1.85;letter-spacing:.05em;text-align:justify;hyphens:none}
+.mercado-dir{padding:56px clamp(20px, 4vw, 60px) 64px}
+.mercado-titulo{text-align:center;font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(1.7rem, 2.9vw, 2.6rem);line-height:1.05;color:var(--tinta)}
+.mercado-linha{display:block;width:min(45%, 520px);height:2px;background:#4a4a46;margin:30px auto 52px}
+.noticias{display:grid;grid-template-columns:1fr 1fr;gap:28px 40px;align-items:start}
+.noticias-col{display:flex;flex-direction:column;gap:52px}
+.noticias-col:last-child{padding-top:0}
+.noticia{display:flex;flex-direction:column;gap:10px}
+.noticia-img{display:block;background:#fff;box-shadow:0 6px 16px rgba(26,9,5,.08);transition:transform .25s ease, box-shadow .25s ease}
+.noticia-img:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(26,9,5,.14)}
+.noticia-img img{width:100%;height:auto;display:block}
+.noticia-texto{padding:18px 20px 14px;text-align:center;text-decoration:none;color:#222}
+.noticia-texto strong{display:block;font-family:"Arial Narrow","Roboto Condensed",Arial,sans-serif;font-stretch:condensed;font-weight:700;font-size:clamp(1.3rem, 2.2vw, 1.9rem);line-height:1.15;letter-spacing:-.01em}
+.noticia-texto small{display:block;margin-top:10px;font-size:12px;color:#444}
+.noticia-fonte{font-style:italic;font-size:clamp(14px, 1.35vw, 17px);color:var(--tinta);text-decoration:underline;text-underline-offset:3px;padding-left:20px}
+.noticia-fonte:hover{color:var(--vinho)}
+@media (max-width:1000px){
+  .mercado-canva{grid-template-columns:1fr;padding-left:0}
+  .mercado-esq{order:2}
+  .noticias{grid-template-columns:1fr}
+  .noticias-col{gap:36px}
+}
+
 /* Por que investir em UGC no estilo do Canva: bege, anéis atrás dos números, setas e foto sem fundo */
 .ugc-canva{background:#e4d6ce;padding:56px 0 72px;overflow:hidden;scroll-margin-top:var(--topo)}
 .ugc-grade{display:grid;grid-template-columns:1fr 460px;gap:24px;align-items:end}
@@ -801,6 +830,49 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     </div>
   </section>
 
+  <!-- ============ UGC É O NOVO MERCADO MAIS LUCRATIVO (igual ao Canva) ============ -->
+  <section class="mercado-canva" id="mercado" aria-labelledby="mercado-titulo">
+    <div class="mercado-esq">
+      <!-- FOTO: no Canva é a foto deitada no sofá com o celular. Salve como imagens/mercado.jpg e troque a div abaixo por:
+           <img src="imagens/mercado.jpg" alt="Maria Clara Filgueiras deitada no sofá olhando o celular"> -->
+      <div class="midia mercado-foto" role="img" aria-label="Espaço para a foto de Maria Clara deitada no sofá com o celular">
+        <span class="midia-legenda">foto da creator</span>
+      </div>
+      <p class="mercado-frase revelar">“O UGC é o cliente que sua marca quer alcançar”</p>
+      <p class="mercado-texto revelar">O conteúdo UGC é aquele que conversa com o cliente da sua marca, mostrando a experiência do produto/ serviço por meio de uma narrativa que não só conecta, mas converte.</p>
+    </div>
+    <div class="mercado-dir">
+      <h2 class="mercado-titulo revelar" id="mercado-titulo">UGC é o novo mercado mais lucrativo</h2>
+      <span class="mercado-linha" aria-hidden="true"></span>
+      <div class="noticias">
+        <div class="noticias-col">
+          <div class="noticia revelar">
+            <a href="https://valor.globo.com/patrocinado/dino/noticia/2026/03/02/plataformas-de-ugc-ganham-forca-no-mercado-brasileiro-1.ghtml" target="_blank" rel="noopener" class="noticia-img"><img src="imagens/noticia-valor.jpg" alt="Manchete do Valor Econômico: Plataformas de UGC ganham força no mercado brasileiro" width="900" height="249" loading="lazy"></a>
+            <a href="https://valor.globo.com/patrocinado/dino/noticia/2026/03/02/plataformas-de-ugc-ganham-forca-no-mercado-brasileiro-1.ghtml" target="_blank" rel="noopener" class="noticia-fonte">Fonte: Valor Econômico. (Clique para ler)<span class="visualmente-oculto"> (abre em nova aba)</span></a>
+          </div>
+          <div class="noticia revelar">
+            <a href="https://propmark.com.br/opiniao/ugc-o-elefante-da-creator-economy/" target="_blank" rel="noopener" class="noticia-img noticia-texto"><strong>UGC, o ‘elefante’ da creator economy</strong><small>12 de Novembro de 2024 | 07:11</small></a>
+            <a href="https://propmark.com.br/opiniao/ugc-o-elefante-da-creator-economy/" target="_blank" rel="noopener" class="noticia-fonte">Fonte: Propmark. (Clique para ler)<span class="visualmente-oculto"> (abre em nova aba)</span></a>
+          </div>
+          <div class="noticia revelar">
+            <a href="https://abramark.com.br/destaques/marcas-do-grupo-boticario-apostam-em-conteudos-produzidos-por-consumidores-para-fortalecer-novas-estrategias-de-marketing/" target="_blank" rel="noopener" class="noticia-img"><img src="imagens/noticia-abramark.jpg" alt="Manchete da Abramark: Marcas do Grupo Boticário apostam em conteúdos produzidos por consumidores para fortalecer novas estratégias de marketing" width="900" height="319" loading="lazy"></a>
+            <a href="https://abramark.com.br/destaques/marcas-do-grupo-boticario-apostam-em-conteudos-produzidos-por-consumidores-para-fortalecer-novas-estrategias-de-marketing/" target="_blank" rel="noopener" class="noticia-fonte">Fonte: Abramark. (Clique para ler)<span class="visualmente-oculto"> (abre em nova aba)</span></a>
+          </div>
+        </div>
+        <div class="noticias-col">
+          <div class="noticia revelar">
+            <a href="https://acontecendoaqui.com.br/marketing/artigo-ugc-como-as-marcas-driblam-influenciadores-para-pagar-menos-por-publicidade/" target="_blank" rel="noopener" class="noticia-img"><img src="imagens/noticia-acontecendo.jpg" alt="Manchete do Acontecendo Aqui: ARTIGO, UGC: como as marcas driblam influenciadores para pagar menos por publicidade" width="900" height="446" loading="lazy"></a>
+            <a href="https://acontecendoaqui.com.br/marketing/artigo-ugc-como-as-marcas-driblam-influenciadores-para-pagar-menos-por-publicidade/" target="_blank" rel="noopener" class="noticia-fonte">Fonte: Acontecendo aqui (Clique para ler)<span class="visualmente-oculto"> (abre em nova aba)</span></a>
+          </div>
+          <div class="noticia revelar">
+            <a href="https://www.ecommercebrasil.com.br/artigos/os-beneficios-de-ter-clientes-como-embaixadores-de-marca-atraves-do-ugc" target="_blank" rel="noopener" class="noticia-img"><img src="imagens/noticia-ecommerce.jpg" alt="Manchete do E-commerce Brasil: Os benefícios de ter clientes como embaixadores de marca através do UGC" width="900" height="446" loading="lazy"></a>
+            <a href="https://www.ecommercebrasil.com.br/artigos/os-beneficios-de-ter-clientes-como-embaixadores-de-marca-atraves-do-ugc" target="_blank" rel="noopener" class="noticia-fonte">Fonte: E-commerce Brasil. (Clique para ler)<span class="visualmente-oculto"> (abre em nova aba)</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ 7. POR QUE INVESTIR EM UGC (igual ao Canva) ============ -->
   <section class="ugc-canva" id="por-que-ugc" aria-labelledby="porque-titulo">
     <div class="container">
@@ -821,11 +893,6 @@ a.video:hover .play::after{border-left-color:var(--creme)}
         </div>
         <!-- FOTO: o arquivo fica em imagens/ugc.png (PNG sem fundo) -->
         <img class="ugc-foto revelar" style="--atraso:.15s" src="imagens/ugc.png?v=2" alt="Maria Clara Filgueiras sorrindo, de blusa lilás plissada, com as mãos abertas para os lados" width="976" height="1000" loading="lazy">
-      </div>
-      <ul class="fontes" id="fontes" aria-label="Matérias sobre o mercado de UGC"></ul>
-      <div class="frase-final revelar">
-        <p>"O UGC é o cliente que a sua marca quer alcançar."</p>
-        <p>O conteúdo UGC é aquele que conversa com o cliente da sua marca, mostrando a experiência do produto ou serviço por meio de uma narrativa que não só conecta, mas converte.</p>
       </div>
     </div>
   </section>
@@ -1286,7 +1353,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     '<ul class="marcas" aria-hidden="true">' + itensMarcas + "</ul>";
 
   // Fontes
-  document.getElementById("fontes").innerHTML = fontes.map(function (f, i) {
+  if (document.getElementById("fontes")) document.getElementById("fontes").innerHTML = fontes.map(function (f, i) {
     return '<li class="revelar" style="--atraso:' + (i * 0.06) + 's"><a class="cartao fonte" href="' + esc(f.link) + '" target="_blank" rel="noopener">' +
       "<strong>" + esc(f.titulo) + "</strong><span>" + esc(f.veiculo) + " · ler matéria ↗</span></a></li>";
   }).join("");
