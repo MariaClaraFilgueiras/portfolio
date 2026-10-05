@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#521a1e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,700;1,800&display=swap" rel="stylesheet">
 <style>
 /* =========================================================
    PALETA E BASE
@@ -388,6 +388,19 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   .faixa-figos{height:110px}
 }
 
+/* O que está incluso no estilo do Canva: nude, título em serifa, número grande vazado atrás de cada etapa */
+.incluso-canva{background:#e4d6ce;padding:72px 0 88px;scroll-margin-top:var(--topo)}
+.incluso-titulo{text-align:center;font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(2.4rem, 5vw, 4.2rem);line-height:1;color:var(--vinho);margin-bottom:64px}
+.incluso-grade{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:72px 40px}
+.incluso-item{position:relative;text-align:center;padding:0 6px}
+.incluso-num{position:absolute;z-index:0;left:50%;top:38px;transform:translateX(-50%);font-family:var(--corpo);font-weight:800;font-size:clamp(9rem, 15vw, 13rem);line-height:1;color:transparent;-webkit-text-stroke:3px rgba(26,9,5,.1);pointer-events:none}
+.incluso-item > *:not(.incluso-num){position:relative;z-index:1}
+.incluso-item h3{font-family:var(--corpo);font-style:italic;font-weight:800;text-transform:uppercase;font-size:clamp(15px, 1.6vw, 20px);letter-spacing:.01em;color:var(--vinho);text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+.incluso-resumo{font-weight:700;font-size:clamp(14px, 1.3vw, 16px);line-height:1.45;color:var(--tinta);margin:30px auto 0;max-width:30ch}
+.incluso-item p:last-child{font-size:clamp(14px, 1.25vw, 16px);line-height:1.6;color:var(--tinta);margin:28px auto 0;max-width:32ch}
+@media (max-width:1000px){.incluso-grade{grid-template-columns:repeat(2, minmax(0,1fr));gap:56px 28px}}
+@media (max-width:640px){.incluso-grade{grid-template-columns:1fr;gap:56px}.incluso-canva{padding:56px 0 64px}.incluso-titulo{margin-bottom:44px}}
+
 /* Processo criativo no estilo do Canva: foto à esquerda, nude à direita, faixa verde arredondada */
 .processo-canva{display:grid;grid-template-columns:.85fr 1.15fr;background:#e4d6ce;padding-left:48px;scroll-margin-top:var(--topo)}
 .processo-foto{position:relative;min-height:640px}
@@ -583,7 +596,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     <ul class="nav-lista" id="nav-lista">
       <li><a href="#sobre">Sobre</a></li>
       <li><a href="#trabalhos">Trabalhos</a></li>
-      <li><a href="#processo">Como funciona</a></li>
+      <li><a href="#incluso">Como funciona</a></li>
       <li><a href="#feedbacks">Feedbacks</a></li>
       <li><a href="#contato" class="nav-cta">Trabalhe comigo</a></li>
     </ul>
@@ -730,6 +743,15 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     <div class="faixa-figos" aria-hidden="true"></div>
   </section>
 
+  <!-- ============ O QUE ESTÁ INCLUSO (igual ao Canva) ============ -->
+  <section class="incluso-canva" id="incluso" aria-labelledby="incluso-titulo">
+    <div class="container">
+      <h2 class="incluso-titulo revelar" id="incluso-titulo">O que está incluso</h2>
+      <!-- As etapas vêm do array "etapas" no script -->
+      <ol class="incluso-grade" id="etapas"></ol>
+    </div>
+  </section>
+
   <!-- ============ 6. PROCESSO CRIATIVO (igual ao Canva) ============ -->
   <section class="processo-canva" id="processo" aria-labelledby="processo-titulo">
     <!-- FOTO DO PROCESSO CRIATIVO: o arquivo fica em imagens/processo.jpg -->
@@ -742,17 +764,6 @@ a.video:hover .play::after{border-left-color:var(--creme)}
       <p>Como posso ser porta-voz da marca: Faço um briefing para entender os valores, diferenciais, tom de voz, formato de conteúdo, como se posiciona, qual mensagem quer passar, entre outros.</p>
       <p>Monto uma estrutura visual, entendendo o posicionamento da marca e harmonizando desde o cabelo, make, roupa, até o tom da unha.</p>
       <p>Quero que você tenha a melhor experiência possível, por isso me preocupo em conectar a sua marca com o seu público por meio da minha narrativa, trazendo pontos de identificação, ou até mesmo possibilidade de explorar novos oceanos azuis.</p>
-    </div>
-  </section>
-
-  <!-- ============ 7. COMO FUNCIONA ============ -->
-  <section class="secao" id="como-funciona" aria-labelledby="como-titulo">
-    <div class="container">
-      <div class="cabecalho revelar">
-        <p class="rotulo">Como funciona</p>
-        <h2 class="titulo" id="como-titulo">Do briefing à <em>entrega final</em></h2>
-      </div>
-      <ol class="etapas etapas-grade" id="etapas"></ol>
     </div>
   </section>
 
@@ -1061,12 +1072,12 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 
   // COMO FUNCIONA: as seis etapas do trabalho
   var etapas = [
-    { titulo: "Alinhamento", resumo: "Compreensão das necessidades da sua marca", texto: "Alinhamos os objetivos por meio de um estudo aprofundado, para entender as reais necessidades da sua marca e o seu público alvo." },
-    { titulo: "Estratégia", resumo: "Roteiro exclusivo para a sua marca", texto: "Roteiros totalmente personalizados, criados com base no que foi estudado. O roteiro é enviado para a sua aprovação antes de gravar." },
-    { titulo: "Gravação e edição", resumo: "Mão na massa", texto: "Aqui a mágica acontece: vídeos de 30 a 60 segundos, junto com os outros materiais combinados." },
-    { titulo: "Envio para aprovação", resumo: "Com marca d'água", texto: "Os materiais prontos chegam para aprovação com marca d'água. Pode ser feita uma alteração por vídeo." },
-    { titulo: "Pagamento", resumo: "Após a aprovação final", texto: "O pagamento é feito na conta informada no contrato, com envio da nota fiscal para o CNPJ da marca." },
-    { titulo: "Envio final", resumo: "Sucesso com a parceria", texto: "Os conteúdos são entregues para uso em tráfego pago pelo período do contrato, além de redes sociais, sites e catálogos." }
+    { titulo: "Alinhamento", resumo: "Compreensão das necessidades das suas necessidades como marca", texto: "Primeiro passo é alinhar os objetivos através de um estudo aprofundado, para entender as reais necessidades da sua marca. Isso inclui compreensão do público alvo para poder focar em conteúdos mais estratégicos." },
+    { titulo: "Estratégia", resumo: "Estratégia exclusiva de acordo com as necessidades previamente ditas", texto: "Estratégia de roteiros totalmente personalizados que serão criados para a sua marca, baseado nas informações colhidas e estudadas previamente. Esse roteiro será enviado para aprovação." },
+    { titulo: "Gravação + Edição", resumo: "Mão na massa", texto: "Aqui é onde a mágica acontece, por meio da criação de vídeos de 30s a 60s, juntamente com outros materiais que foram acordados previamente." },
+    { titulo: "Envio para aprovação", resumo: "Envio dos materiais assim que concluídos para aprovação", texto: "Assim que os materiais solicitados estiverem prontos, serão enviados para aprovação com marca d’água. Podendo ser feita até uma alteração por vídeo." },
+    { titulo: "Pagamento", resumo: "Após a aprovação final", texto: "O pagamento deve ser feito para a conta previamente dita no contrato, assim como o envio da nota fiscal para o CNPJ informado pela marca." },
+    { titulo: "Envio final", resumo: "Sucesso com a parceria", texto: "Todos os conteúdos são enviados para a marca, podendo usá-los em tráfego pago, pelos meses pré-determinados no contrato, assim como redes sociais, sites e catálogos." }
   ];
 
   // MARCAS com quem você já trabalhou
@@ -1235,11 +1246,11 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 
   // Etapas
   document.getElementById("etapas").innerHTML = etapas.map(function (e, i) {
-    return '<li class="cartao etapa revelar" style="--atraso:' + (i * 0.06) + 's">' +
-      '<span class="etapa-num" aria-hidden="true">' + String(i + 1).padStart(2, "0") + "</span>" +
-      "<div><h3>" + esc(e.titulo) + "</h3>" +
-      '<p class="etapa-resumo">' + esc(e.resumo) + "</p>" +
-      "<p>" + esc(e.texto) + "</p></div></li>";
+    return '<li class="incluso-item revelar" style="--atraso:' + ((i % 3) * 0.1) + 's">' +
+      '<span class="incluso-num" aria-hidden="true">' + (i + 1) + "</span>" +
+      "<h3>" + esc(e.titulo) + "</h3>" +
+      '<p class="incluso-resumo">' + esc(e.resumo) + "</p>" +
+      "<p>" + esc(e.texto) + "</p></li>";
   }).join("");
 
   // Marcas (a segunda cópia existe só para o movimento contínuo)
