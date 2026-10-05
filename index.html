@@ -388,6 +388,23 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   .faixa-figos{height:110px}
 }
 
+/* Processo criativo no estilo do Canva: foto à esquerda, nude à direita, faixa verde arredondada */
+.processo-canva{display:grid;grid-template-columns:.85fr 1.15fr;background:#e4d6ce;padding-left:48px;scroll-margin-top:var(--topo)}
+.processo-foto{position:relative;min-height:640px}
+.processo-foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.processo-conteudo{padding:56px clamp(24px, 5vw, 72px) 64px}
+.processo-titulo{font-family:var(--serifa);font-weight:500;text-transform:uppercase;font-size:clamp(2.1rem, 3.9vw, 3.3rem);line-height:1;color:var(--vinho);text-align:center}
+.processo-pilula{background:#2f4139;color:var(--creme);border-radius:22px;padding:10px 28px;margin:26px auto 40px;max-width:520px;text-align:center;font-weight:700;text-transform:uppercase;font-size:clamp(13px, 1.4vw, 16px);line-height:1.45;letter-spacing:.02em}
+.processo-conteudo > p:not(.processo-pilula){font-size:clamp(15px, 1.4vw, 18px);line-height:1.7;color:var(--tinta);letter-spacing:.02em;max-width:56ch}
+.processo-conteudo > p:not(.processo-pilula) + p{margin-top:28px}
+.etapas-grade{grid-template-columns:repeat(2, minmax(0,1fr))}
+@media (max-width:1000px){
+  .processo-canva{grid-template-columns:1fr;padding-left:0}
+  .processo-foto{min-height:0;aspect-ratio:4/5;max-height:80vh}
+  .processo-conteudo{padding:48px 20px 56px}
+  .etapas-grade{grid-template-columns:1fr}
+}
+
 /* =========================================================
    6. COMO FUNCIONA (processo criativo + etapas)
    ========================================================= */
@@ -566,7 +583,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     <ul class="nav-lista" id="nav-lista">
       <li><a href="#sobre">Sobre</a></li>
       <li><a href="#trabalhos">Trabalhos</a></li>
-      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#processo">Como funciona</a></li>
       <li><a href="#feedbacks">Feedbacks</a></li>
       <li><a href="#contato" class="nav-cta">Trabalhe comigo</a></li>
     </ul>
@@ -713,22 +730,29 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     <div class="faixa-figos" aria-hidden="true"></div>
   </section>
 
-  <!-- ============ 6. COMO FUNCIONA ============ -->
+  <!-- ============ 6. PROCESSO CRIATIVO (igual ao Canva) ============ -->
+  <section class="processo-canva" id="processo" aria-labelledby="processo-titulo">
+    <!-- FOTO DO PROCESSO CRIATIVO: o arquivo fica em imagens/processo.jpg -->
+    <div class="processo-foto revelar">
+      <img src="imagens/processo.jpg" alt="Maria Clara Filgueiras entre girassóis, segurando um girassol perto do rosto" width="1120" height="1400" loading="lazy">
+    </div>
+    <div class="processo-conteudo revelar" style="--atraso:.1s">
+      <h2 class="processo-titulo" id="processo-titulo">Processo criativo</h2>
+      <p class="processo-pilula">Penso, em todos os detalhes antes de começar a produzir:</p>
+      <p>Como posso ser porta-voz da marca: Faço um briefing para entender os valores, diferenciais, tom de voz, formato de conteúdo, como se posiciona, qual mensagem quer passar, entre outros.</p>
+      <p>Monto uma estrutura visual, entendendo o posicionamento da marca e harmonizando desde o cabelo, make, roupa, até o tom da unha.</p>
+      <p>Quero que você tenha a melhor experiência possível, por isso me preocupo em conectar a sua marca com o seu público por meio da minha narrativa, trazendo pontos de identificação, ou até mesmo possibilidade de explorar novos oceanos azuis.</p>
+    </div>
+  </section>
+
+  <!-- ============ 7. COMO FUNCIONA ============ -->
   <section class="secao" id="como-funciona" aria-labelledby="como-titulo">
     <div class="container">
       <div class="cabecalho revelar">
         <p class="rotulo">Como funciona</p>
         <h2 class="titulo" id="como-titulo">Do briefing à <em>entrega final</em></h2>
       </div>
-      <div class="como-grade">
-        <div class="cartao processo revelar">
-          <h3>Processo criativo</h3>
-          <p><strong>Penso em todos os detalhes antes de começar a produzir.</strong> Faço um briefing para entender os valores, os diferenciais, o tom de voz, o formato de conteúdo e qual mensagem a marca quer passar.</p>
-          <p>Monto uma estrutura visual, entendendo o posicionamento da marca e harmonizando desde o cabelo, a make e a roupa até o tom da unha.</p>
-          <p>Quero que você tenha a melhor experiência possível, por isso conecto a sua marca com o seu público por meio da minha narrativa, trazendo pontos de identificação ou até a possibilidade de explorar novos oceanos azuis.</p>
-        </div>
-        <ol class="etapas" id="etapas"></ol>
-      </div>
+      <ol class="etapas etapas-grade" id="etapas"></ol>
     </div>
   </section>
 
