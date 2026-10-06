@@ -15,6 +15,11 @@
   // O e-mail da dona do painel (usado só para conferir quem entrou)
   window.EMAIL_DONA = "mariaugclara@gmail.com";
 
+  // Client ID do Google, para a aba Caixa de entrada ler o Gmail.
+  // Não é segredo (aparece em todo site com login do Google). Vazio = o painel
+  // pede para você colar na própria aba. NUNCA coloque aqui a "chave secreta do cliente".
+  window.GOOGLE_CLIENT_ID = "";
+
   // Se a biblioteca do Supabase não carregou (sem internet, por exemplo),
   // "banco" fica vazio e cada página segue funcionando do jeito que der.
   window.banco = window.supabase && window.supabase.createClient

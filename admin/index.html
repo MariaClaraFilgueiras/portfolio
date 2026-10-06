@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/painel.css?v=20261002b">
+<link rel="stylesheet" href="../css/painel.css?v=20261006a">
 </head>
 <body>
 
@@ -49,6 +49,7 @@
   <symbol id="i-enviar" viewBox="0 0 24 24"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/></symbol>
   <symbol id="i-codigo" viewBox="0 0 24 24"><path d="m8 17-5-5 5-5M16 7l5 5-5 5"/></symbol>
   <symbol id="i-tela-cheia" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-caixa" viewBox="0 0 24 24"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/></symbol>
   <symbol id="i-site" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
 </svg>
 
@@ -73,6 +74,7 @@
       <a class="lateral-item" href="#portfolio" data-aba="portfolio"><svg class="icone"><use href="#i-portfolio"/></svg>Portfólio</a>
       <a class="lateral-item" href="#marcas" data-aba="marcas"><svg class="icone"><use href="#i-marcas"/></svg>Marcas</a>
       <a class="lateral-item" href="#prospeccao" data-aba="prospeccao"><svg class="icone"><use href="#i-envelope"/></svg>Prospecção</a>
+      <a class="lateral-item" href="#caixa" data-aba="caixa"><svg class="icone"><use href="#i-caixa"/></svg>Caixa de entrada<b class="selo-menu" id="selo-caixa" hidden></b></a>
       <p class="lateral-secao">minha rotina</p>
       <a class="lateral-item" href="#calendario" data-aba="calendario"><svg class="icone"><use href="#i-calendario"/></svg>Calendário</a>
       <a class="lateral-item" href="#campanhas" data-aba="campanhas"><svg class="icone"><use href="#i-campanhas"/></svg>Campanhas</a>
@@ -97,6 +99,7 @@
     <section class="aba" id="aba-portfolio" data-aba="portfolio" hidden></section>
     <section class="aba" id="aba-marcas" data-aba="marcas" hidden></section>
     <section class="aba" id="aba-prospeccao" data-aba="prospeccao" hidden></section>
+    <section class="aba" id="aba-caixa" data-aba="caixa" hidden></section>
     <section class="aba" id="aba-calendario" data-aba="calendario" hidden></section>
     <section class="aba" id="aba-campanhas" data-aba="campanhas" hidden></section>
     <section class="aba" id="aba-checklist" data-aba="checklist" hidden></section>
@@ -108,8 +111,8 @@
 <dialog class="janela" id="janela"></dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/banco.js?v=20261002b"></script>
-<script src="../js/biblioteca.js?v=20261002b"></script>
-<script src="admin.js?v=20261002b"></script>
+<script src="../js/banco.js?v=20261006a"></script>
+<script src="../js/biblioteca.js?v=20261006a"></script>
+<script src="admin.js?v=20261006a"></script>
 </body>
 </html>

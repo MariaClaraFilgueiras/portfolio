@@ -300,6 +300,7 @@
     portfolio: { titulo: "Portfólio", sub: "como o site está indo", desenhar: desenharPortfolio },
     marcas: { titulo: "Marcas", sub: "a minha base de contatos", desenhar: desenharMarcas },
     prospeccao: { titulo: "Prospecção", sub: "e-mail de apresentação para as marcas", desenhar: desenharProspeccao },
+    caixa: { titulo: "Caixa de entrada", sub: "respostas das marcas, do seu Gmail", desenhar: desenharCaixa },
     calendario: { titulo: "Calendário", sub: "gravar, editar e postar", desenhar: desenharCalendario },
     campanhas: { titulo: "Campanhas", sub: "trabalhos fechados", desenhar: desenharCampanhas },
     checklist: { titulo: "Checklist Portfólio", sub: "consulta e revisão", desenhar: desenharChecklist },
@@ -323,8 +324,9 @@
     $("#titulo-aba").textContent = ABAS[nome].titulo;
     $("#subtitulo-aba").textContent = ABAS[nome].sub;
     $("#titulo-movel").textContent = ABAS[nome].titulo;
-    $(".cabeca").classList.toggle("sem-titulo", nome === "prospeccao");
+    $(".cabeca").classList.toggle("sem-titulo", nome === "prospeccao" || nome === "caixa");
     document.title = ABAS[nome].titulo + " | Painel Maria Clara";
+    atualizarSeloCaixa();
     redesenhar();
   }
 
@@ -2994,6 +2996,439 @@
       }).catch(function (er) { avisoRapido(traduzirErro(er), true); });
     });
     desenharDescadastroPr();
+  }
+
+  /* =========================================================
+     13. ABA CAIXA DE ENTRADA
+     Lê o seu Gmail (só leitura) e mostra apenas os e-mails que vieram
+     das marcas da aba Marcas, separados por nicho. Nada é copiado para
+     o banco: só fica guardado quais mensagens você já abriu.
+     ========================================================= */
+  var GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
+  var ESCOPO_GMAIL = "https://www.googleapis.com/auth/gmail.readonly";
+  var CHAVE_CLIENT_ID = "painel-google-client-id";
+  var CHAVE_AVISAR = "painel-caixa-avisar";
+  var INTERVALO_CHECAGEM = 5 * 60 * 1000; // 5 minutos
+  var DOMINIOS_GENERICOS = /^(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|icloud|me|mac|uol|bol|terra|ig|globo|r7|protonmail|proton|aol|zoho)\./i;
+  var estadoCx = { token: null, expira: 0, conta: "", lista: [], carregou: false, carregando: false, erro: "", periodo: "90", nicho: "todos", soNovas: false, busca: "", checadoEm: null, avisar: false };
+  try { estadoCx.avisar = localStorage.getItem(CHAVE_AVISAR) === "1"; } catch (e) {}
+  var clienteToken = null, timerCaixa = null, novasAvisadas = {};
+
+  function clientIdGoogle() {
+    if (window.GOOGLE_CLIENT_ID) return window.GOOGLE_CLIENT_ID;
+    try { return localStorage.getItem(CHAVE_CLIENT_ID) || ""; } catch (e) { return ""; }
+  }
+  function tokenValido() { return !!estadoCx.token && Date.now() < estadoCx.expira; }
+  function vistoCx(id) { return !!dados.marcados["inbox:" + id]; }
+  function novaCx(t) { return t.naoLida && !vistoCx(t.ultimoId); }
+
+  // ---------- Quem é marca ----------
+  function indiceRemetentes() {
+    var porEmail = {}, porDominio = {};
+    dados.marcas.forEach(function (m) {
+      if (m.exemplo || !emailValido(m.email)) return;
+      var e = m.email.trim().toLowerCase(), d = e.split("@")[1];
+      porEmail[e] = porEmail[e] || m;
+      if (d && !DOMINIOS_GENERICOS.test(d)) porDominio[d] = porDominio[d] || m;
+    });
+    return { porEmail: porEmail, porDominio: porDominio };
+  }
+  function marcaDoRemetente(email, ind) {
+    email = String(email || "").toLowerCase();
+    return ind.porEmail[email] || ind.porDominio[email.split("@")[1]] || null;
+  }
+  function consultasGmail(ind) {
+    var termos = Object.keys(ind.porDominio).concat(Object.keys(ind.porEmail).filter(function (e) { return !ind.porDominio[e.split("@")[1]]; }));
+    var grupos = [];
+    for (var i = 0; i < termos.length; i += 25) {
+      grupos.push("from:(" + termos.slice(i, i + 25).join(" OR ") + ") -from:me newer_than:" + estadoCx.periodo + "d");
+    }
+    return grupos;
+  }
+
+  // ---------- Conversa com o Google ----------
+  async function pedirTokenGoogle() {
+    var id = clientIdGoogle();
+    if (!id) throw { amigavel: "Falta o Client ID do Google. Siga o passo a passo da aba." };
+    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+      try { await carregarScript("https://accounts.google.com/gsi/client"); }
+      catch (e) { throw { amigavel: "Não consegui carregar o login do Google. Confira a internet." }; }
+    }
+    return new Promise(function (ok, falha) {
+      clienteToken = window.google.accounts.oauth2.initTokenClient({
+        client_id: id,
+        scope: ESCOPO_GMAIL,
+        callback: function (r) {
+          if (r.error) { falha({ amigavel: r.error === "access_denied" ? "A autorização foi cancelada. Clique em Conectar de novo quando quiser." : "O Google não autorizou: " + r.error }); return; }
+          estadoCx.token = r.access_token;
+          estadoCx.expira = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000;
+          ok();
+        },
+        error_callback: function (e) {
+          falha({ amigavel: e && e.type === "popup_closed" ? "A janela do Google foi fechada antes de terminar." : e && e.type === "popup_failed_to_open" ? "O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente de novo." : "Não consegui falar com o Google." });
+        }
+      });
+      clienteToken.requestAccessToken({ prompt: "" });
+    });
+  }
+
+  async function gmail(caminho) {
+    var r = await fetch(GMAIL_API + caminho, { headers: { Authorization: "Bearer " + estadoCx.token } });
+    if (r.status === 401) { estadoCx.token = null; throw { amigavel: "A conexão com o Gmail venceu. Clique em Conectar Gmail de novo.", token: true }; }
+    if (r.status === 403) {
+      var j = {}; try { j = await r.json(); } catch (e) {}
+      var motivo = String(j.error && j.error.message || "");
+      throw { amigavel: /has not been used|disabled/i.test(motivo) ? "A Gmail API ainda não está ativada no seu projeto do Google Cloud. Veja o passo 2 do guia." : "O Google recusou o acesso ao Gmail. Tente conectar de novo." };
+    }
+    if (!r.ok) throw { amigavel: "O Gmail respondeu com erro (" + r.status + "). Tente de novo em instantes." };
+    return r.json();
+  }
+
+  // Faz várias tarefas ao mesmo tempo, no máximo "limite" por vez
+  async function emParalelo(itens, limite, tarefa) {
+    var saida = new Array(itens.length), proximo = 0;
+    async function trabalhador() { while (proximo < itens.length) { var i = proximo++; saida[i] = await tarefa(itens[i], i); } }
+    var lista = []; for (var k = 0; k < Math.min(limite, itens.length); k++) lista.push(trabalhador());
+    await Promise.all(lista);
+    return saida;
+  }
+
+  function cabecalho(msg, nome) {
+    var h = (msg.payload && msg.payload.headers || []).filter(function (x) { return x.name.toLowerCase() === nome.toLowerCase(); })[0];
+    return h ? h.value : "";
+  }
+  function separarRemetente(de) {
+    var m = String(de || "").match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+    return m ? { nome: m[1].trim(), email: m[2].trim().toLowerCase() } : { nome: "", email: String(de || "").trim().toLowerCase() };
+  }
+
+  async function buscarCaixa(silencioso) {
+    if (!tokenValido() || estadoCx.carregando) return;
+    estadoCx.carregando = true; estadoCx.erro = "";
+    if (!silencioso && abaAtual === "caixa") redesenhar();
+    try {
+      if (!estadoCx.conta) { var perfil = await gmail("/profile"); estadoCx.conta = perfil.emailAddress || ""; }
+      var ind = indiceRemetentes();
+      var ids = {}, ordem = [];
+      for (var q of consultasGmail(ind)) {
+        var pagina = "", voltas = 0;
+        do {
+          var r = await gmail("/messages?maxResults=100&q=" + encodeURIComponent(q) + (pagina ? "&pageToken=" + pagina : ""));
+          (r.messages || []).forEach(function (m) { if (!ids[m.id]) { ids[m.id] = true; ordem.push(m.id); } });
+          pagina = r.nextPageToken || ""; voltas++;
+        } while (pagina && voltas < 3);
+      }
+      var msgs = await emParalelo(ordem, 6, function (id) {
+        return gmail("/messages/" + id + "?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date").catch(function (e) { if (e.token) throw e; return null; });
+      });
+      // Uma linha por conversa, com a mensagem mais nova
+      var conversas = {};
+      msgs.filter(Boolean).forEach(function (m) {
+        var de = separarRemetente(cabecalho(m, "From"));
+        var marca = marcaDoRemetente(de.email, ind);
+        var quando = Number(m.internalDate || 0);
+        var t = conversas[m.threadId];
+        if (!t) t = conversas[m.threadId] = { threadId: m.threadId, qtd: 0, naoLida: false };
+        t.qtd++;
+        if ((m.labelIds || []).indexOf("UNREAD") >= 0) t.naoLida = true;
+        if (!t.data || quando > t.data) {
+          t.ultimoId = m.id; t.data = quando; t.assunto = cabecalho(m, "Subject") || "(sem assunto)";
+          t.trecho = String(m.snippet || "").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+          t.de = de; t.marcaId = marca ? marca.id : null;
+        }
+      });
+      estadoCx.lista = Object.keys(conversas).map(function (k) { return conversas[k]; }).sort(function (a, b) { return b.data - a.data; });
+      estadoCx.carregou = true;
+      estadoCx.checadoEm = new Date();
+      avisarNovas();
+    } catch (e) {
+      console.error(e);
+      estadoCx.erro = (e && e.amigavel) || "Não consegui ler o Gmail agora. Tente de novo em instantes.";
+    }
+    estadoCx.carregando = false;
+    atualizarSeloCaixa();
+    if (abaAtual === "caixa") redesenhar();
+  }
+
+  function marcaDaConversa(t) { return t.marcaId != null ? acharPorId(dados.marcas, t.marcaId) : null; }
+  function nichoDaConversa(t) { var m = marcaDaConversa(t); return m && String(m.nicho || "").trim() || "Sem nicho"; }
+
+  // ---------- O sinal de mensagem nova ----------
+  function atualizarSeloCaixa() {
+    var n = estadoCx.lista.filter(novaCx).length;
+    var selo = $("#selo-caixa");
+    if (selo) { selo.textContent = n > 99 ? "99+" : String(n); selo.hidden = !n; }
+    var base = ABAS[abaAtual] ? ABAS[abaAtual].titulo + " | Painel Maria Clara" : document.title.replace(/^\(\d+\+?\)\s*/, "");
+    document.title = (n ? "(" + n + ") " : "") + base;
+  }
+  function avisarNovas() {
+    var novas = estadoCx.lista.filter(function (t) { return novaCx(t) && !novasAvisadas[t.ultimoId]; });
+    var primeiraVez = !Object.keys(novasAvisadas).length && !estadoCx.avisouAntes;
+    novas.forEach(function (t) { novasAvisadas[t.ultimoId] = true; });
+    estadoCx.avisouAntes = true;
+    if (primeiraVez || !novas.length) return; // na primeira leitura só mostra o número, sem pipocar aviso
+    avisoRapido(novas.length === 1 ? "Mensagem nova de " + nomeDaConversa(novas[0]) : novas.length + " mensagens novas das marcas");
+    if (estadoCx.avisar && window.Notification && Notification.permission === "granted") {
+      try {
+        var n = new Notification(novas.length === 1 ? "Mensagem nova de " + nomeDaConversa(novas[0]) : novas.length + " mensagens novas das marcas", { body: novas[0].assunto, tag: "painel-caixa" });
+        n.onclick = function () { window.focus(); location.hash = "#caixa"; n.close(); };
+      } catch (e) {}
+    }
+  }
+  function nomeDaConversa(t) { var m = marcaDaConversa(t); return (m && m.nome) || t.de.nome || t.de.email; }
+  function ligarChecagemCaixa() {
+    clearInterval(timerCaixa);
+    timerCaixa = setInterval(function () { if (tokenValido() && document.visibilityState === "visible") buscarCaixa(true); }, INTERVALO_CHECAGEM);
+  }
+
+  // ---------- Desenho da aba ----------
+  function desenharCaixa(painel) {
+    var conectado = tokenValido();
+    var topo =
+      '<section class="cx-topo">' +
+        '<span class="cx-topo-icone">' + icone("caixa") + "</span>" +
+        '<div class="cx-topo-texto"><h2>Caixa de entrada</h2><p>As respostas das marcas da sua base, direto do seu Gmail, separadas por nicho.</p></div>' +
+        '<div class="cx-topo-acoes">' +
+          (conectado
+            ? '<span class="cx-status"><i></i>' + esc(estadoCx.conta || "Gmail conectado") + "</span>" +
+              '<button type="button" class="btn btn-linha" id="cx-atualizar"' + (estadoCx.carregando ? " disabled" : "") + ">" + icone("sobe-desce") + (estadoCx.carregando ? "Lendo..." : "Atualizar") + "</button>"
+            : (clientIdGoogle() ? '<button type="button" class="btn btn-vinho" id="cx-conectar">' + icone("envelope") + "Conectar Gmail</button>" : "")) +
+        "</div>" +
+      "</section>";
+
+    if (!clientIdGoogle()) { painel.innerHTML = topo + guiaGoogleCx(); ligarGuiaCx(); return; }
+    if (!conectado) {
+      painel.innerHTML = topo +
+        '<div class="cartao bloco-espaco cx-conectar">' +
+          "<h2>Conecte o seu Gmail para ver as respostas</h2>" +
+          "<p>O painel pede ao Google só permissão de <b>leitura</b>: ele não envia, não apaga e não muda nada no seu Gmail. A conexão dura 1 hora; depois é só clicar de novo.</p>" +
+          (estadoCx.erro ? '<div class="faixa faixa-erro" style="margin:10px 0">' + esc(estadoCx.erro) + "</div>" : "") +
+          '<button type="button" class="btn btn-vinho" id="cx-conectar-grande">' + icone("envelope") + "Conectar Gmail</button>" +
+          '<p class="fraco" style="font-size:11.5px;margin-top:10px">Na primeira vez, o Google mostra o aviso "O Google não verificou este app". É o seu próprio painel: clique em Continuar.</p>' +
+          '<button type="button" class="link-botao" id="cx-trocar-id" style="margin-top:8px;font-size:12px">Trocar o Client ID do Google</button>' +
+        "</div>";
+      ligarTopoCx();
+      $("#cx-conectar-grande").addEventListener("click", conectarCx);
+      $("#cx-trocar-id").addEventListener("click", function () { try { localStorage.removeItem(CHAVE_CLIENT_ID); } catch (e) {} redesenhar(); });
+      return;
+    }
+
+    var comEmail = dados.marcas.filter(function (m) { return !m.exemplo && emailValido(m.email); }).length;
+    var porNicho = {}, novasPorNicho = {};
+    estadoCx.lista.forEach(function (t) { var n = nichoDaConversa(t); porNicho[n] = (porNicho[n] || 0) + 1; if (novaCx(t)) novasPorNicho[n] = (novasPorNicho[n] || 0) + 1; });
+    var nichos = Object.keys(porNicho).sort(function (a, b) { if (a === "Sem nicho") return 1; if (b === "Sem nicho") return -1; return a.localeCompare(b, "pt-BR"); });
+    var totalNovas = estadoCx.lista.filter(novaCx).length;
+    if (estadoCx.nicho !== "todos" && !porNicho[estadoCx.nicho]) estadoCx.nicho = "todos";
+
+    painel.innerHTML = topo +
+      (estadoCx.erro ? '<div class="faixa faixa-erro" style="margin-top:14px">' + esc(estadoCx.erro) + "</div>" : "") +
+      '<div class="cx-grade">' +
+        '<aside class="cartao cx-nichos"><p class="lateral-secao" style="padding:0 8px 6px">Nichos</p><ul>' +
+          itemNichoCx("todos", "Todas as marcas", estadoCx.lista.length, totalNovas) +
+          nichos.map(function (n) { return itemNichoCx(n, n, porNicho[n], novasPorNicho[n] || 0); }).join("") +
+        "</ul></aside>" +
+        '<div class="cx-principal">' +
+          '<div class="ferramentas">' +
+            '<label class="busca"><span class="visualmente-oculto">Buscar</span>' + icone("busca") + '<input class="entrada" type="search" id="cx-busca" placeholder="Buscar por marca, assunto ou texto" value="' + esc(estadoCx.busca) + '"></label>' +
+            '<div class="chips"><button type="button" class="chip" id="cx-so-novas" aria-pressed="' + estadoCx.soNovas + '">Só novas' + (totalNovas ? " <small>" + totalNovas + "</small>" : "") + "</button></div>" +
+            '<select class="entrada filtro-nicho" id="cx-periodo" aria-label="Período">' +
+              [["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["365", "Último ano"]].map(function (p) { return '<option value="' + p[0] + '"' + (estadoCx.periodo === p[0] ? " selected" : "") + ">" + p[1] + "</option>"; }).join("") +
+            "</select>" +
+            '<span class="espaco"></span>' +
+            (window.Notification ? '<button type="button" class="btn btn-fantasma" id="cx-avisar" aria-pressed="' + estadoCx.avisar + '">' + icone("ok") + (estadoCx.avisar && Notification.permission === "granted" ? "Avisando no computador" : "Avisar no computador") + "</button>" : "") +
+          "</div>" +
+          '<div id="cx-lista"></div>' +
+          '<p class="fraco" style="font-size:11.5px;margin-top:8px">' + (estadoCx.checadoEm ? "Conferido às " + estadoCx.checadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + ". " : "") +
+            "Enquanto o painel estiver aberto, ele confere de novo a cada 5 minutos. Aparecem só e-mails de quem está na sua aba Marcas (" + plural(comEmail, "marca com e-mail", "marcas com e-mail") + ").</p>" +
+        "</div>" +
+      "</div>";
+
+    ligarTopoCx();
+    desenharListaCx();
+    $(".cx-nichos", painel).addEventListener("click", function (e) {
+      var b = e.target.closest("[data-nicho]"); if (!b) return;
+      estadoCx.nicho = b.getAttribute("data-nicho");
+      $$(".cx-nicho", painel).forEach(function (x) { x.setAttribute("aria-current", String(x === b)); });
+      desenharListaCx();
+    });
+    $("#cx-busca").addEventListener("input", function () { estadoCx.busca = this.value; desenharListaCx(); });
+    $("#cx-so-novas").addEventListener("click", function () { estadoCx.soNovas = !estadoCx.soNovas; this.setAttribute("aria-pressed", String(estadoCx.soNovas)); desenharListaCx(); });
+    $("#cx-periodo").addEventListener("change", function () { estadoCx.periodo = this.value; buscarCaixa(); });
+    var av = $("#cx-avisar");
+    if (av) av.addEventListener("click", function () {
+      if (estadoCx.avisar) { estadoCx.avisar = false; try { localStorage.setItem(CHAVE_AVISAR, "0"); } catch (e) {} redesenhar(); return; }
+      Notification.requestPermission().then(function (p) {
+        estadoCx.avisar = p === "granted";
+        try { localStorage.setItem(CHAVE_AVISAR, estadoCx.avisar ? "1" : "0"); } catch (e) {}
+        avisoRapido(estadoCx.avisar ? "Pronto: quando chegar mensagem nova, aparece um aviso no computador" : "O navegador não deixou mostrar avisos. Libere nas configurações do site.", !estadoCx.avisar);
+        redesenhar();
+      });
+    });
+  }
+
+  function itemNichoCx(valor, texto, total, novas) {
+    return '<li><button type="button" class="cx-nicho" data-nicho="' + esc(valor) + '" aria-current="' + (estadoCx.nicho === valor) + '">' +
+      "<span>" + esc(texto) + "</span>" + (novas ? '<b class="cx-selo">' + novas + "</b>" : '<small>' + total + "</small>") + "</button></li>";
+  }
+
+  function desenharListaCx() {
+    var caixa = $("#cx-lista"); if (!caixa) return;
+    if (!estadoCx.carregou) { caixa.innerHTML = '<p class="carregando">Lendo o seu Gmail...</p>'; return; }
+    var termo = normalizar(estadoCx.busca);
+    var lista = estadoCx.lista.filter(function (t) {
+      if (estadoCx.nicho !== "todos" && nichoDaConversa(t) !== estadoCx.nicho) return false;
+      if (estadoCx.soNovas && !novaCx(t)) return false;
+      return !termo || [nomeDaConversa(t), t.de.email, t.assunto, t.trecho].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
+    });
+    if (!estadoCx.lista.length) { caixa.innerHTML = '<p class="vazio">Nenhum e-mail das marcas da sua base nos últimos ' + esc(estadoCx.periodo) + " dias. Quando uma marca responder, aparece aqui.</p>"; return; }
+    if (!lista.length) { caixa.innerHTML = '<p class="vazio">' + (estadoCx.soNovas ? "Nenhuma mensagem nova por aqui. Tudo lido." : "Nada encontrado com esse filtro.") + "</p>"; return; }
+    caixa.innerHTML = '<ul class="cx-mensagens">' + lista.map(function (t) {
+      var m = marcaDaConversa(t), nova = novaCx(t), nome = nomeDaConversa(t);
+      var d = new Date(t.data), hoje = new Date();
+      var quando = d.toDateString() === hoje.toDateString() ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      return '<li><button type="button" class="cx-mensagem' + (nova ? " nova" : "") + '" data-thread="' + esc(t.threadId) + '">' +
+        '<span class="cx-ponto" aria-label="' + (nova ? "nova" : "lida") + '"></span>' +
+        '<span class="cx-avatar">' + esc(nome.replace(/^@/, "").charAt(0).toUpperCase()) + "</span>" +
+        '<span class="cx-miolo"><span class="cx-linha1"><strong>' + esc(nome) + "</strong>" +
+          (m && m.nicho ? '<span class="pilula sem-bola p-nicho">' + esc(m.nicho) + "</span>" : "") +
+          (t.qtd > 1 ? '<small class="fraco">' + t.qtd + "</small>" : "") + "</span>" +
+          '<span class="cx-assunto">' + esc(t.assunto) + "</span>" +
+          '<span class="cx-trecho">' + esc(t.trecho) + "</span></span>" +
+        '<time class="cx-quando">' + esc(quando) + "</time></button></li>";
+    }).join("") + "</ul>";
+    caixa.onclick = function (e) {
+      var b = e.target.closest(".cx-mensagem"); if (!b) return;
+      var t = estadoCx.lista.filter(function (x) { return x.threadId === b.getAttribute("data-thread"); })[0];
+      if (t) abrirMensagemCx(t);
+    };
+  }
+
+  function ligarTopoCx() {
+    var c = $("#cx-conectar"); if (c) c.addEventListener("click", conectarCx);
+    var a = $("#cx-atualizar"); if (a) a.addEventListener("click", function () { buscarCaixa(); });
+  }
+
+  async function conectarCx() {
+    estadoCx.erro = "";
+    try {
+      await pedirTokenGoogle();
+      ligarChecagemCaixa();
+      await buscarCaixa();
+    } catch (e) {
+      estadoCx.erro = (e && e.amigavel) || "Não consegui conectar ao Gmail.";
+      redesenhar();
+    }
+  }
+
+  // ---------- Abrir uma mensagem ----------
+  function decodificarBase64Url(s) {
+    try {
+      var bin = atob(String(s || "").replace(/-/g, "+").replace(/_/g, "/"));
+      var bytes = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder("utf-8").decode(bytes);
+    } catch (e) { return ""; }
+  }
+  function corpoDaMensagem(msg) {
+    var html = "", texto = "";
+    (function andar(p) {
+      if (!p) return;
+      if (p.mimeType === "text/html" && p.body && p.body.data && !html) html = decodificarBase64Url(p.body.data);
+      else if (p.mimeType === "text/plain" && p.body && p.body.data && !texto) texto = decodificarBase64Url(p.body.data);
+      (p.parts || []).forEach(andar);
+    })(msg.payload);
+    return { html: html, texto: texto };
+  }
+
+  async function abrirMensagemCx(t) {
+    abrirJanela(cabecaJanela(esc(t.assunto)) + '<div class="janela-corpo"><p class="carregando">Abrindo...</p></div>', true);
+    janela.classList.add("extra-larga");
+    var msg;
+    try { msg = await gmail("/messages/" + t.ultimoId + "?format=full"); }
+    catch (e) { $(".janela-corpo", janela).innerHTML = '<div class="faixa faixa-erro">' + esc(e.amigavel || "Não consegui abrir a mensagem.") + "</div>"; if (e.token) redesenhar(); return; }
+    var corpo = corpoDaMensagem(msg);
+    var marca = marcaDaConversa(t);
+    var pediuSair = /\bSAIR\b/.test(t.assunto + " " + corpo.texto + " " + textoDoHtml(corpo.html).slice(0, 2000));
+    var jaDescadastrado = dados.email_optout.some(function (o) { return o.email === t.de.email; });
+    var quando = new Date(t.data).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" });
+    var linkGmail = "https://mail.google.com/mail/u/0/#all/" + encodeURIComponent(t.threadId);
+
+    $(".janela-corpo", janela).innerHTML =
+      '<div class="cx-ler-cabeca"><span class="cx-avatar grande">' + esc(nomeDaConversa(t).replace(/^@/, "").charAt(0).toUpperCase()) + "</span>" +
+        "<div><strong>" + esc(t.de.nome || nomeDaConversa(t)) + '</strong> <span class="fraco">&lt;' + esc(t.de.email) + "&gt;</span>" +
+        '<small class="fraco" style="display:block">' + esc(quando) + (t.qtd > 1 ? " · conversa com " + t.qtd + " mensagens" : "") + "</small></div></div>" +
+      (marca ? '<div class="cx-ler-marca"><span>Marca: <b>' + esc(marca.nome) + "</b></span>" + (marca.nicho ? '<span class="pilula sem-bola p-nicho">' + esc(marca.nicho) + "</span>" : "") +
+        '<span class="pilula p-' + classe(marca.situacao) + '">' + esc(marca.situacao || "Lead") + "</span></div>" : "") +
+      (pediuSair && !jaDescadastrado ? '<div class="faixa faixa-alerta" style="margin-bottom:12px"><div>Essa mensagem tem a palavra <b>SAIR</b>. Se a marca pediu para não receber mais, coloque no descadastro.</div></div>' : "") +
+      (corpo.html
+        ? '<iframe class="cx-ler-corpo" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Mensagem"></iframe>'
+        : '<div class="cx-ler-texto">' + esc(corpo.texto || t.trecho) + "</div>");
+
+    if (corpo.html) {
+      var f = $(".cx-ler-corpo", janela);
+      var html = corpo.html.replace(/<script[\s\S]*?<\/script>/gi, "");
+      var protecao = '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src https: data:; style-src \'unsafe-inline\' https:; font-src https: data:"><base target="_blank">';
+      html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (h) { return h + protecao; }) : protecao + html;
+      f.onload = function () { try { f.style.height = Math.min(1600, Math.max(240, f.contentDocument.documentElement.scrollHeight + 8)) + "px"; } catch (e) {} };
+      f.srcdoc = html;
+    }
+
+    var rodape = janela.querySelector(".janela-rodape") || document.createElement("div");
+    rodape.className = "janela-rodape";
+    rodape.innerHTML =
+      '<a class="btn btn-vinho" href="' + linkGmail + '" target="_blank" rel="noopener">' + icone("link") + "Abrir e responder no Gmail</a>" +
+      (marca && (marca.situacao || "Lead") === "Lead" ? '<button type="button" class="btn btn-linha" id="cx-conversando">' + icone("ok") + "Mudar para Conversando</button>" : "") +
+      (marca ? '<button type="button" class="btn btn-linha" id="cx-ver-marca">' + icone("marcas") + "Ver marca</button>" : "") +
+      (pediuSair && !jaDescadastrado ? '<button type="button" class="btn btn-perigo" id="cx-descadastrar">Descadastrar este e-mail</button>' : "") +
+      '<span class="espaco"></span><button type="button" class="btn btn-fantasma" data-fechar>Fechar</button>';
+    janela.appendChild(rodape);
+
+    var b1 = $("#cx-conversando");
+    if (b1) b1.addEventListener("click", function () {
+      b1.disabled = true;
+      gravar("marcas", { situacao: "Conversando", ultimo_contato: hojeISO() }, marca.id).then(function (linha) {
+        trocarNaLista(dados.marcas, linha); avisoRapido(marca.nome + " agora está como Conversando"); b1.remove();
+      }).catch(function (e) { b1.disabled = false; avisoRapido(traduzirErro(e), true); });
+    });
+    var b2 = $("#cx-ver-marca"); if (b2) b2.addEventListener("click", function () { janela.close(); formularioMarca(marca); });
+    var b3 = $("#cx-descadastrar"); if (b3) b3.addEventListener("click", function () { b3.disabled = true; descadastrarPr(t.de.email, "respondeu SAIR").then(function () { b3.remove(); }); });
+
+    // Abriu: deixa de ser nova
+    if (!vistoCx(t.ultimoId)) {
+      alternarMarcado("inbox:" + t.ultimoId, true).catch(function () {}).then(function () { atualizarSeloCaixa(); desenharListaCx(); redesenharNichosCx(); });
+      atualizarSeloCaixa(); desenharListaCx();
+    }
+  }
+  function redesenharNichosCx() { if (abaAtual === "caixa" && $(".cx-nichos")) { var busca = estadoCx.busca; redesenhar(); estadoCx.busca = busca; } }
+
+  // ---------- Guia de configuração do Google ----------
+  function guiaGoogleCx() {
+    var origem = location.origin;
+    return '<div class="cartao bloco-espaco cx-guia">' +
+      "<h2>Falta ligar o painel ao Google (uma vez só, uns 10 minutos)</h2>" +
+      "<p class=\"suave\">O Google precisa saber que este painel é seu antes de deixar ele ler o seu Gmail. Faça estes passos logada com " + esc(EMAIL_CONTATO) + ".</p>" +
+      '<ol class="cx-passos">' +
+        '<li><b>Crie um projeto.</b> Abra <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com/projectcreate</a>, dê o nome "Painel Maria Clara" e clique em Criar.</li>' +
+        '<li><b>Ligue a Gmail API.</b> Abra <a href="https://console.cloud.google.com/apis/library/gmail.googleapis.com" target="_blank" rel="noopener">a página da Gmail API</a>, confira que o projeto novo está escolhido lá em cima e clique em <b>Ativar</b>.</li>' +
+        '<li><b>Configure a tela de autorização.</b> Abra <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> e clique em <b>Começar</b>. Nome do app: "Painel Maria Clara". E-mail de suporte: o seu. Público: <b>Externo</b>. Contato: o seu e-mail. Aceite e crie.</li>' +
+        '<li><b>Coloque você como usuária de teste.</b> Em <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener">Público (Audience)</a>, em "Usuários de teste", clique em <b>Adicionar usuários</b> e coloque ' + esc(EMAIL_CONTATO) + ". Deixe o app em modo <b>Teste</b>.</li>" +
+        '<li><b>Crie o Client ID.</b> Em <a href="https://console.cloud.google.com/auth/clients/create" target="_blank" rel="noopener">Clientes, Criar cliente</a>, escolha o tipo <b>Aplicativo da Web</b>. Em <b>Origens JavaScript autorizadas</b>, adicione exatamente:<code class="cx-codigo">https://mariaclarafilgueiras.github.io</code>' + (origem.indexOf("github.io") < 0 ? '<code class="cx-codigo">' + esc(origem) + "</code>" : "") + "Deixe os “URIs de redirecionamento” em branco e clique em Criar.</li>" +
+        "<li><b>Copie o Client ID</b> (o código que termina com <code>.apps.googleusercontent.com</code>) e cole aqui embaixo. <b>Não</b> copie a “Chave secreta do cliente”: ela não é usada e não deve ir pra lugar nenhum.</li>" +
+      "</ol>" +
+      '<form class="pr-descad-form" id="cx-form-id"><label class="visualmente-oculto" for="cx-client-id">Client ID do Google</label>' +
+        '<input class="entrada" id="cx-client-id" placeholder="000000000000-xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">' +
+        '<button class="btn btn-vinho" type="submit">' + icone("ok") + "Salvar e conectar</button></form>" +
+      '<p class="fraco" style="font-size:11.5px;margin-top:8px">O Client ID não é segredo (ele aparece para qualquer um que usa login do Google). Ele fica guardado neste navegador. Se quiser que ele valha em todos os computadores, me mande o Client ID que eu deixo ele fixo no painel.</p>' +
+    "</div>";
+  }
+  function ligarGuiaCx() {
+    $("#cx-form-id").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var v = $("#cx-client-id").value.trim();
+      if (!/^[\w-]+\.apps\.googleusercontent\.com$/.test(v)) { avisoRapido("Esse não parece um Client ID do Google. Ele termina com .apps.googleusercontent.com", true); return; }
+      try { localStorage.setItem(CHAVE_CLIENT_ID, v); } catch (er) {}
+      redesenhar();
+      conectarCx();
+    });
   }
 
 })();
