@@ -1198,6 +1198,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   // MARCAS: aparecem nos círculos que correm em "Marcas que confiam no meu trabalho".
   // logo: arquivo em imagens/marcas/. Sem logo, aparece o nome escrito.
   // estilo: "cheio" (a imagem ocupa o círculo todo), "escuro" (logo branca, fundo vinho) ou vazio (logo com respiro no fundo claro)
+  // fundo: cor do círculo atrás da logo (ex.: "#a2612f"), quando a logo tem fundo colorido
   var marcas = [
     { nome: "Lalamove", logo: "imagens/marcas/lalamove.jpg", estilo: "lavar" },
     { nome: "Skelt", logo: "imagens/marcas/skelt.jpg" },
@@ -1216,7 +1217,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     { nome: "Amanri Ambiental", logo: "imagens/marcas/amanri.png" },
     { nome: "Sou Concurseiro", logo: "imagens/marcas/sou-concurseiro.jpg", estilo: "cheio" },
     { nome: "União Vegetal", logo: "imagens/marcas/uniao-vegetal.jpg" },
-    { nome: "Clube Aura", logo: "imagens/marcas/clube-aura.png", estilo: "cheio" },
+    { nome: "Clube Aura", logo: "imagens/marcas/clube-aura.jpg", fundo: "#a3612f" },
     { nome: "Cliniqore", logo: "imagens/marcas/cliniqore.png", estilo: "cheio" },
     { nome: "Collum", logo: "imagens/marcas/collum.png" }
   ];
@@ -1390,7 +1391,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   var itensMarcas = marcas.map(function (m) {
     if (typeof m === "string") m = { nome: m };
     if (!m.logo) return "<li>" + esc(m.nome) + "</li>";
-    return '<li class="marca-logo' + (m.estilo ? " marca-" + esc(m.estilo) : "") + '"><img src="' + esc(m.logo) + '" alt="' + esc(m.nome === "Marca parceira" ? "Logo de marca parceira" : "Logo " + m.nome) + '" loading="lazy"></li>';
+    return '<li class="marca-logo' + (m.estilo ? " marca-" + esc(m.estilo) : "") + '"' + (m.fundo ? ' style="background:' + esc(m.fundo) + '"' : "") + '><img src="' + esc(m.logo) + '" alt="' + esc(m.nome === "Marca parceira" ? "Logo de marca parceira" : "Logo " + m.nome) + '" loading="lazy"></li>';
   }).join("");
   document.getElementById("marcas-lista").innerHTML =
     '<ul class="marcas">' + itensMarcas + "</ul>" +
