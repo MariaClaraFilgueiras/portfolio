@@ -240,6 +240,19 @@ button,input,textarea{font:inherit;color:inherit}
   font-family:var(--serifa);font-weight:700;font-size:17px;line-height:1.05;color:var(--vinho);
 }
 
+/* Player de vídeo por cima do site */
+.player{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:16px}
+.player[hidden]{display:none}
+.player-fundo{position:absolute;inset:0;background:rgba(26,9,5,.82)}
+.player-caixa{position:relative;width:min(380px, 100%, calc((100vh - 120px) * 9 / 16));display:flex;flex-direction:column;align-items:center;gap:12px;animation:surgir .3s ease both}
+.player-quadro{width:100%;aspect-ratio:9/16;background:#000;border-radius:12px;overflow:hidden}
+.player-quadro iframe{width:100%;height:100%;border:0;display:block}
+.player-x{position:absolute;top:-6px;right:-52px;width:44px;height:44px;border-radius:50%;border:0;background:var(--creme);color:var(--vinho);font-size:26px;line-height:1;cursor:pointer}
+.player-link{color:var(--creme);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+@media (max-width:520px){.player-x{top:-52px;right:0}}
+/* capas do YouTube: o vídeo vertical fica no meio da imagem */
+.video-capa .midia img{object-fit:cover;object-position:center}
+
 /* Logos das marcas dentro dos círculos */
 .marcas li.marca-logo{padding:11px;background:#fff;overflow:hidden}
 .marcas li.marca-logo img{width:100%;height:100%;object-fit:contain;display:block}
@@ -726,7 +739,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 
   <ul class="numeros" aria-label="Em números">
     <li><span class="num" data-contador data-alvo="15" data-sufixo="+">15+</span><span class="leg">Marcas parceiras</span></li>
-    <li><span class="num" data-contador data-alvo="10">10</span><span class="leg">Nichos atendidos</span></li>
+    <li><span class="num" data-contador data-alvo="11">11</span><span class="leg">Nichos atendidos</span></li>
     <li><span class="num" data-contador data-alvo="4" data-sufixo=" anos">4 anos</span><span class="leg">De marketing digital</span></li>
     <li><span class="num" data-contador data-alvo="72" data-sufixo="h">72h</span><span class="leg">Prazo de entrega</span></li>
   </ul>
@@ -1010,6 +1023,16 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   </div>
 </footer>
 
+<!-- ============ PLAYER DE VÍDEO ============ -->
+<div class="player" id="player" hidden>
+  <div class="player-fundo" data-fechar-player></div>
+  <div class="player-caixa" role="dialog" aria-modal="true" aria-label="Vídeo">
+    <button class="player-x" type="button" data-fechar-player aria-label="Fechar vídeo">×</button>
+    <div class="player-quadro" id="player-quadro"></div>
+    <a class="player-link" id="player-link" href="#" target="_blank" rel="noopener">Abrir no YouTube ↗</a>
+  </div>
+</div>
+
 <!-- ============ CARD DE CAPTURA: MÍDIA KIT ============ -->
 <div class="modal" id="modal-kit" hidden>
   <div class="modal-fundo" data-fechar></div>
@@ -1066,8 +1089,8 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   // link: COLE AQUI o link do vídeo (reels, TikTok, Drive ou YouTube). TROCAR
   // capa: COLOQUE AQUI o arquivo da capa vertical 9:16 (ex.: "imagens/destaque-01.jpg"). Vazio mostra o degradê. TROCAR
   var destaques = [
-    { titulo: "Cerveja sem álcool", tipo: "ADS", link: INSTAGRAM, capa: "" },
-    { titulo: "Kombucha em São Paulo", tipo: "ADS", link: INSTAGRAM, capa: "" }
+    { titulo: "Beba luci", link: "https://youtube.com/shorts/yiuaqqI3yFI" },
+    { titulo: "Viver de Kombucha", link: "https://youtube.com/shorts/Tw-fVB2ctsc" }
   ];
 
   // TRABALHOS POR NICHO: cada nicho vira um botão de filtro e uma linha de vídeos.
@@ -1075,70 +1098,77 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   // aparece enquanto o painel ainda não tiver nenhum vídeo visível, ou se o banco
   // estiver fora do ar. O nome e o subtítulo de cada nicho continuam vindo daqui
   // quando o nicho do painel tiver o mesmo nome.
-  // Em cada trabalho: titulo (pode ficar vazio), tipo, link do vídeo (TROCAR) e capa 9:16 (TROCAR).
+  // Em cada trabalho: titulo e link do vídeo do YouTube. A capa vem sozinha do YouTube.
   var nichos = [
     { id: "selfcare", nome: "Selfcare", script: "Selfcare", subtitulo: "Skincare, bodycare, haircare e saúde íntima", trabalhos: [
-      { titulo: "Hair care", tipo: "Depoimento", link: "", capa: "" },
-      { titulo: "Body care", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Skin care", tipo: "Depoimento", link: "", capa: "" },
-      { titulo: "Saúde íntima", tipo: "ADS", link: "", capa: "" }
+      { titulo: "Maxfem", link: "https://youtube.com/shorts/GngoDEajxJ8" },
+      { titulo: "Vasiven", link: "https://youtube.com/shorts/FpVP-qk1QJY" },
+      { titulo: "Hidratei", link: "https://youtube.com/shorts/LIE0HflmU0g" },
+      { titulo: "Creamy", link: "https://youtube.com/shorts/cvoRkkG50rQ" }
     ]},
     { id: "moda", nome: "Moda", script: "Moda", subtitulo: "Outfits que contam história", trabalhos: [
-      { titulo: "Roupas", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Bolsa", tipo: "Depoimento", link: "", capa: "" },
-      { titulo: "Moda fitness", tipo: "Instagram", link: "", capa: "" },
-      { titulo: "Acessórios", tipo: "Data especial", link: "", capa: "" }
+      { titulo: "NV", link: "https://youtube.com/shorts/pkMprMuEMaY" },
+      { titulo: "NV", link: "https://youtube.com/shorts/4IsU6O1MZmA" },
+      { titulo: "Mistique", link: "https://youtube.com/shorts/ijOU3xLMgrE" },
+      { titulo: "Live", link: "https://youtube.com/shorts/bKYJJkd2hZY" },
+      { titulo: "Claudia Arbex", link: "https://youtube.com/shorts/Z_qnLLLIieA" }
     ]},
     { id: "beleza", nome: "Beleza", script: "Beleza", subtitulo: "Produtos que viram ritual", trabalhos: [
-      { titulo: "Perfume", tipo: "Unboxing e experiência", link: "", capa: "" },
-      { titulo: "Perfume", tipo: "ADS", link: "", capa: "" },
-      { titulo: "Alinhador dos fios", tipo: "Depoimento", link: "", capa: "" },
-      { titulo: "Maquiagem", tipo: "Experiência", link: "", capa: "" }
+      { titulo: "Perfume Skelt", link: "https://youtube.com/shorts/iWFiOGXxmlI" },
+      { titulo: "Ollie", link: "https://youtube.com/shorts/3NW-eGR-yeA" },
+      { titulo: "Mise en Scène", link: "https://youtube.com/shorts/Rjzy1ms7tXE" }
     ]},
     { id: "fitness", nome: "Fitness e nutrição", script: "Fitness", subtitulo: "Alimentação e suplementos que viram rotina", trabalhos: [
-      { titulo: "", tipo: "Depoimento e educativo", link: "", capa: "" },
-      { titulo: "", tipo: "ADS", link: "", capa: "" },
-      { titulo: "", tipo: "Depoimento e experiência", link: "", capa: "" },
-      { titulo: "", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "", tipo: "Experiência e depoimento", link: "", capa: "" }
+      { titulo: "Mandacá", link: "https://youtube.com/shorts/bBbt_jiV2OI" },
+      { titulo: "União Vegetal", link: "https://youtube.com/shorts/_ymyegc0NhU" },
+      { titulo: "Vero Foods", link: "https://youtube.com/shorts/rpQi3hJkUE8" },
+      { titulo: "Nutrata", link: "https://youtube.com/shorts/zpoY496pk1A" },
+      { titulo: "Dot", link: "https://youtube.com/shorts/kVXGIuj0B-g" },
+      { titulo: "Supercoffee", link: "https://youtube.com/shorts/vKNYvyqimQM" },
+      { titulo: "Dot", link: "https://youtube.com/shorts/b_EiOYboiYc" }
     ]},
     { id: "arte", nome: "Arte e cultura", script: "Cultura", subtitulo: "Literatura, arquitetura, passeios e cinema", trabalhos: [
-      { titulo: "Livros", tipo: "Depoimento e experiência", link: "", capa: "" },
-      { titulo: "Passeio cultural", tipo: "Depoimento e experiência", link: "", capa: "" },
-      { titulo: "Passeio cultural", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Cinema", tipo: "Experiência", link: "", capa: "" }
+      { titulo: "Passeio Cultural", link: "https://youtube.com/shorts/lgORNK6wQGQ" },
+      { titulo: "Experiência Cultural", link: "https://youtube.com/shorts/ThG30TbUJHg" },
+      { titulo: "Darkside", link: "https://youtube.com/shorts/tdxnQepdgOk" },
+      { titulo: "Filme Raízes Sertanejas", link: "https://youtube.com/shorts/gxxxXTeR9cY" }
     ]},
     { id: "casa", nome: "Casa e decoração", script: "Casa", subtitulo: "Ambientes que inspiram", trabalhos: [
-      { titulo: "Cozinha", tipo: "Depoimento", link: "", capa: "" },
-      { titulo: "Decoração", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Cozinha", tipo: "Tutorial e experiência", link: "", capa: "" },
-      { titulo: "Cama", tipo: "Experiência", link: "", capa: "" }
+      { titulo: "Casa Riachuelo (biscoiteira)", link: "https://youtube.com/shorts/BfZD8g0Olrk" },
+      { titulo: "Casa Riachuelo (saladeira)", link: "https://youtube.com/shorts/4QmPhH2yRSQ" },
+      { titulo: "Casa Riachuelo (jarro)", link: "https://youtube.com/shorts/hQvs95-p-xY" },
+      { titulo: "Casa Riachuelo (colcha)", link: "https://youtube.com/shorts/k9EUJsFqBgA" }
     ]},
     { id: "negocios", nome: "Empreendedorismo e negócios", script: "Negócios", subtitulo: "Espaço físico, imobiliária, educação e cursos", trabalhos: [
-      { titulo: "Concurso público", tipo: "ADS", link: "", capa: "" },
-      { titulo: "Empretec Sebrae", tipo: "Storytelling", link: "", capa: "" },
-      { titulo: "Aplicativo", tipo: "ADS", link: "", capa: "" },
-      { titulo: "Serviço jurídico", tipo: "Experiência", link: "", capa: "" }
+      { titulo: "Lalamove", link: "https://youtube.com/shorts/NasukuE7McQ" },
+      { titulo: "BF Med", link: "https://youtube.com/shorts/om1YvTr-6NM" },
+      { titulo: "Casa Octo", link: "https://youtube.com/shorts/_cO9sLu446s" },
+      { titulo: "Concurseiros", link: "https://youtube.com/shorts/Vfuhh2DFtgA" },
+      { titulo: "Sebrae", link: "https://youtube.com/shorts/PpFVm0UA1Og" }
     ]},
     { id: "papelaria", nome: "Papelaria", script: "Papelaria", subtitulo: "Cadernos e acessórios", trabalhos: [
-      { titulo: "Papelaria", tipo: "Depoimento e experiência", link: "", capa: "" },
-      { titulo: "Papelaria", tipo: "Depoimento e modo de usar", link: "", capa: "" },
-      { titulo: "Cadernos", tipo: "ADS", link: "", capa: "" },
-      { titulo: "Papelaria cristã", tipo: "Storytelling", link: "", capa: "" }
+      { titulo: "Muisis", link: "https://youtube.com/shorts/5OuVMmhozU4" },
+      { titulo: "Pentel", link: "https://youtube.com/shorts/iwLOcbbfGcU" },
+      { titulo: "Purpose", link: "https://youtube.com/shorts/CU6gWgIhpuc" },
+      { titulo: "MIM Papelaria", link: "https://youtube.com/shorts/09F907fMrls" }
     ]},
     { id: "gastronomia", nome: "Gastronomia", script: "Gastronomia", subtitulo: "Comida que dá água na boca", trabalhos: [
-      { titulo: "Restaurante", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Restaurante", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Cerveja sem álcool", tipo: "ADS", link: "", capa: "" },
-      { titulo: "Supermercado", tipo: "Receita", link: "", capa: "" }
+      { titulo: "Pão de Açúcar", link: "https://youtube.com/shorts/EefQ9LBYing" },
+      { titulo: "Antonieta Cucina", link: "https://youtube.com/shorts/yzqFPCPHFAk" },
+      { titulo: "Dolce Madre", link: "https://youtube.com/shorts/Ak5P5fORlhw" },
+      { titulo: "Beba luci", link: "https://youtube.com/shorts/Tskz1NO7rtw" }
+    ]},
+    { id: "experiencia", nome: "Experiência", script: "Experiência", subtitulo: "Lugares e serviços que vivi de perto", trabalhos: [
+      { titulo: "Natália Beauty", link: "https://youtube.com/shorts/gMLCARAp9T8" },
+      { titulo: "Loja NV", link: "https://youtube.com/shorts/1QqUEUXrJTk" },
+      { titulo: "Arena Beauty", link: "https://youtube.com/shorts/8VbwZyqcQpg" },
+      { titulo: "Dentista", link: "https://youtube.com/shorts/eae_gPlhBjQ" }
     ]},
     { id: "diversos", nome: "Diversos", script: "Diversos", subtitulo: "Pet, saúde, aplicativos e locais físicos", trabalhos: [
-      { titulo: "Pet", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Locais físicos", tipo: "Storytelling", link: "", capa: "" },
-      { titulo: "Garrafa térmica", tipo: "Educativo", link: "", capa: "" },
-      { titulo: "Tratamento odontológico", tipo: "Experiência", link: "", capa: "" },
-      { titulo: "Aplicativo", tipo: "Depoimento e ADS", link: "", capa: "" },
-      { titulo: "Saúde mental", tipo: "Depoimento", link: "", capa: "" }
+      { titulo: "Gocase", link: "https://youtube.com/shorts/K5nEwxCTlQE" },
+      { titulo: "Music Playce", link: "https://youtube.com/shorts/qqNRnJuLewE" },
+      { titulo: "Cliniqore", link: "https://youtube.com/shorts/Ix1avZoGe18" },
+      { titulo: "Collum (PET)", link: "https://youtube.com/shorts/fmWHkupzaaQ" }
     ]}
   ];
 
@@ -1253,11 +1283,19 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   }
   function repetir(html, vezes) { var s = ""; for (var i = 0; i < vezes; i++) s += html; return s; }
 
-  // Card de vídeo vertical: vira link quando tem "link", e mostra a capa quando tem "capa"
+  // Pega o código do vídeo de um link do YouTube (shorts, youtu.be ou watch?v=)
+  function idYoutube(link) {
+    var m = String(link || "").match(/(?:shorts\/|youtu\.be\/|[?&]v=|embed\/)([\w-]{11})/);
+    return m ? m[1] : "";
+  }
+
+  // Card de vídeo vertical: vira link quando tem "link". A capa vem do YouTube quando não tiver "capa".
   function cardVideo(v, i) {
     var nome = v.titulo || v.tipo;
-    var capa = v.capa
-      ? '<div class="midia"><img src="' + esc(v.capa) + '" alt="Capa do vídeo: ' + esc(nome) + '" loading="lazy" width="540" height="960"></div>'
+    var yt = idYoutube(v.link);
+    var arquivoCapa = v.capa || (yt ? "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg" : "");
+    var capa = arquivoCapa
+      ? '<div class="midia"><img src="' + esc(arquivoCapa) + '" alt="Capa do vídeo: ' + esc(nome) + '" loading="lazy" width="480" height="360"></div>'
       : '<div class="midia" style="background:' + degrades[i % degrades.length] + '"><span class="midia-legenda">capa 9:16</span></div>';
     var tipo = v.tipo ? '<span class="video-tipo">' + esc(v.tipo) + "</span>" : "";
     var selo = v.destaque ? '<span class="video-destaque">' + esc(v.destaque) + "</span>" : "";
@@ -1265,8 +1303,8 @@ a.video:hover .play::after{border-left-color:var(--creme)}
       (v.marca ? "<span>" + esc(v.marca) + "</span>" : "") + "</p>";
     var miolo = '<div class="video-capa">' + capa + tipo + selo + '<span class="play" aria-hidden="true"></span></div>' + legenda;
     if (v.link) {
-      return '<a class="video" href="' + esc(v.link) + '" target="_blank" rel="noopener">' + miolo +
-        '<span class="visualmente-oculto"> Assistir ao vídeo (abre em nova aba)</span></a>';
+      return '<a class="video" href="' + esc(v.link) + '" target="_blank" rel="noopener"' + (yt ? ' data-youtube="' + yt + '"' : "") + ">" + miolo +
+        '<span class="visualmente-oculto"> Assistir ao vídeo</span></a>';
     }
     return '<div class="video">' + miolo + "</div>";
   }
@@ -1536,6 +1574,35 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     formContato.nome.focus();
   });
 
+  /* ---------- Player de vídeo (abre o YouTube por cima do site) ---------- */
+  var player = document.getElementById("player");
+  var playerQuadro = document.getElementById("player-quadro");
+  var playerFoco = null;
+  function abrirPlayer(id, titulo) {
+    playerFoco = document.activeElement;
+    playerQuadro.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1" title="' + esc(titulo || "Vídeo") + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+    document.getElementById("player-link").href = "https://youtube.com/shorts/" + id;
+    player.hidden = false;
+    document.body.classList.add("travado");
+    setTimeout(function () { player.querySelector(".player-x").focus(); }, 50);
+  }
+  function fecharPlayer() {
+    if (player.hidden) return;
+    player.hidden = true;
+    playerQuadro.innerHTML = "";
+    document.body.classList.remove("travado");
+    if (playerFoco && playerFoco.focus) playerFoco.focus();
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("a[data-youtube]");
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    var t = a.querySelector(".video-legenda strong");
+    abrirPlayer(a.getAttribute("data-youtube"), t ? t.textContent : "");
+  });
+  player.addEventListener("click", function (e) { if (e.target.closest("[data-fechar-player]")) fecharPlayer(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") fecharPlayer(); });
+
   /* ---------- Card de captura do mídia kit ---------- */
   var modal = document.getElementById("modal-kit");
   var formKit = document.getElementById("form-kit");
@@ -1668,6 +1735,6 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   registrarVisita();
 })();
 </script>
-<script src="js/idiomas.js?v=3"></script>
+<script src="js/idiomas.js?v=4"></script>
 </body>
 </html>
