@@ -366,6 +366,7 @@
     mostrarAba(abaDoEndereco());
     mostrarPagina();
     await carregarTudo();
+    avisarNovas(); atualizarSeloCaixa(); ligarChecagemCaixa();
     redesenhar();
   }
 
@@ -982,10 +983,10 @@
     if (ids.length > 1) avisoRapido(valor ? plural(ids.length, "marca selecionada", "marcas selecionadas") : "Seleção limpa");
   }
 
-  function formularioMarca(m) {
+  function formularioMarca(m, inicial) {
     abrirFormulario({
       titulo: m ? "Editar marca" : "Adicionar marca",
-      valores: m || { situacao: "Lead", ultimo_contato: hojeISO() },
+      valores: m || Object.assign({ situacao: "Lead", ultimo_contato: hojeISO() }, inicial || {}),
       nota: m && m.origem === "site" ? "Esta marca chegou pelo formulário do seu site." : "",
       campos: [
         { nome: "nome", rotulo: "Marca", obrigatorio: true, inteiro: true },
@@ -3037,6 +3038,13 @@
     email = String(email || "").toLowerCase();
     return ind.porEmail[email] || ind.porDominio[email.split("@")[1]] || null;
   }
+  // Palavras que indicam e-mail de trabalho, vindo de quem ainda não está na base
+  var PALAVRAS_TRABALHO = ["parceria", "parcerias", "UGC", "orçamento", "orcamento", "proposta", "publi", "publicidade", "publipost",
+    "collab", "colaboração", "colaboracao", "campanha", "\"mídia kit\"", "\"media kit\"", "\"midia kit\"", "briefing", "creator", "criadora", "influenciadora"];
+  function consultaTrabalho() {
+    return "(" + PALAVRAS_TRABALHO.join(" OR ") + ") category:primary -from:me newer_than:" + estadoCx.periodo + "d";
+  }
+
   function consultasGmail(ind) {
     var termos = Object.keys(ind.porDominio).concat(Object.keys(ind.porEmail).filter(function (e) { return !ind.porDominio[e.split("@")[1]]; }));
     var grupos = [];
@@ -3110,7 +3118,7 @@
       if (!estadoCx.conta) { var perfil = await gmail("/profile"); estadoCx.conta = perfil.emailAddress || ""; }
       var ind = indiceRemetentes();
       var ids = {}, ordem = [];
-      for (var q of consultasGmail(ind)) {
+      for (var q of consultasGmail(ind).concat([consultaTrabalho()])) {
         var pagina = "", voltas = 0;
         do {
           var r = await gmail("/messages?maxResults=100&q=" + encodeURIComponent(q) + (pagina ? "&pageToken=" + pagina : ""));
@@ -3134,7 +3142,7 @@
         if (!t.data || quando > t.data) {
           t.ultimoId = m.id; t.data = quando; t.assunto = cabecalho(m, "Subject") || "(sem assunto)";
           t.trecho = String(m.snippet || "").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-          t.de = de; t.marcaId = marca ? marca.id : null;
+          t.de = de; t.marcaId = marca ? marca.id : null; t.novaMarca = !marca;
         }
       });
       estadoCx.lista = Object.keys(conversas).map(function (k) { return conversas[k]; }).sort(function (a, b) { return b.data - a.data; });
@@ -3151,23 +3159,59 @@
   }
 
   function marcaDaConversa(t) { return t.marcaId != null ? acharPorId(dados.marcas, t.marcaId) : null; }
-  function nichoDaConversa(t) { var m = marcaDaConversa(t); return m && String(m.nicho || "").trim() || "Sem nicho"; }
+  function nichoDaConversa(t) {
+    var m = marcaDaConversa(t);
+    if (!m && t.tipo !== "site") return "Marcas novas";
+    return m && String(m.nicho || "").trim() || "Sem nicho";
+  }
+  // Depois de cadastrar uma marca nova, as conversas dela passam a ser reconhecidas
+  function reconhecerDeNovoCx() {
+    var ind = indiceRemetentes();
+    estadoCx.lista.forEach(function (t) {
+      if (t.marcaId != null && acharPorId(dados.marcas, t.marcaId)) return;
+      var m = marcaDoRemetente(t.de.email, ind);
+      t.marcaId = m ? m.id : null; t.novaMarca = !m;
+    });
+  }
+
+  // Contatos que chegaram pelo formulário do portfólio (tabela marcas, origem "site").
+  // Funcionam mesmo sem o Gmail ligado. Só os dos últimos 14 dias contam como novos.
+  var DIAS_SITE_NOVO = 14;
+  function separarContatoSite(obs) {
+    var m = String(obs || "").match(/^Contato:\s*([^\n]*?)\.\s*Mensagem pelo site:\s*([\s\S]*)$/);
+    return m ? { pessoa: m[1].trim(), mensagem: m[2].trim() } : { pessoa: "", mensagem: String(obs || "").trim() };
+  }
+  function itensDoSite() {
+    var limite = Date.now() - DIAS_SITE_NOVO * 86400000;
+    return dados.marcas.filter(function (m) { return m.origem === "site" && !m.exemplo; }).map(function (m) {
+      var c = separarContatoSite(m.obs), quando = Date.parse(m.criado_em) || 0;
+      return { tipo: "site", threadId: "site:" + m.id, ultimoId: "site:" + m.id, marcaId: m.id, data: quando, qtd: 1,
+        naoLida: quando >= limite, assunto: "Contato pelo portfólio", trecho: c.mensagem || "(sem mensagem)", pessoa: c.pessoa,
+        de: { nome: c.pessoa || m.nome || "", email: String(m.email || "").trim().toLowerCase() } };
+    });
+  }
+  function itensCx() { return estadoCx.lista.concat(itensDoSite()).sort(function (a, b) { return b.data - a.data; }); }
+  function marcarVistoCx(t) {
+    if (vistoCx(t.ultimoId)) return;
+    alternarMarcado("inbox:" + t.ultimoId, true).catch(function () {}).then(function () { atualizarSeloCaixa(); if (abaAtual === "caixa") redesenhar(); });
+    atualizarSeloCaixa(); desenharListaCx();
+  }
 
   // ---------- O sinal de mensagem nova ----------
   function atualizarSeloCaixa() {
-    var n = estadoCx.lista.filter(novaCx).length;
+    var n = itensCx().filter(novaCx).length;
     var selo = $("#selo-caixa");
     if (selo) { selo.textContent = n > 99 ? "99+" : String(n); selo.hidden = !n; }
     var base = ABAS[abaAtual] ? ABAS[abaAtual].titulo + " | Painel Maria Clara" : document.title.replace(/^\(\d+\+?\)\s*/, "");
     document.title = (n ? "(" + n + ") " : "") + base;
   }
   function avisarNovas() {
-    var novas = estadoCx.lista.filter(function (t) { return novaCx(t) && !novasAvisadas[t.ultimoId]; });
+    var novas = itensCx().filter(function (t) { return novaCx(t) && !novasAvisadas[t.ultimoId]; });
     var primeiraVez = !Object.keys(novasAvisadas).length && !estadoCx.avisouAntes;
     novas.forEach(function (t) { novasAvisadas[t.ultimoId] = true; });
     estadoCx.avisouAntes = true;
     if (primeiraVez || !novas.length) return; // na primeira leitura só mostra o número, sem pipocar aviso
-    avisoRapido(novas.length === 1 ? "Mensagem nova de " + nomeDaConversa(novas[0]) : novas.length + " mensagens novas das marcas");
+    avisoRapido(novas.length === 1 ? (novas[0].tipo === "site" ? "Contato novo pelo portfólio: " : "Mensagem nova de ") + nomeDaConversa(novas[0]) : novas.length + " mensagens novas das marcas");
     if (estadoCx.avisar && window.Notification && Notification.permission === "granted") {
       try {
         var n = new Notification(novas.length === 1 ? "Mensagem nova de " + nomeDaConversa(novas[0]) : novas.length + " mensagens novas das marcas", { body: novas[0].assunto, tag: "painel-caixa" });
@@ -3178,72 +3222,85 @@
   function nomeDaConversa(t) { var m = marcaDaConversa(t); return (m && m.nome) || t.de.nome || t.de.email; }
   function ligarChecagemCaixa() {
     clearInterval(timerCaixa);
-    timerCaixa = setInterval(function () { if (tokenValido() && document.visibilityState === "visible") buscarCaixa(true); }, INTERVALO_CHECAGEM);
+    timerCaixa = setInterval(async function () {
+      if (document.visibilityState !== "visible") return;
+      var marcas = await lerTabela("marcas");
+      if (marcas.length || !dados.marcas.length) dados.marcas = marcas;
+      if (tokenValido()) { buscarCaixa(true); return; }
+      avisarNovas(); atualizarSeloCaixa();
+      if (abaAtual === "caixa") redesenhar();
+    }, INTERVALO_CHECAGEM);
   }
 
   // ---------- Desenho da aba ----------
   function desenharCaixa(painel) {
-    var conectado = tokenValido();
+    var conectado = tokenValido(), temId = !!clientIdGoogle();
     var topo =
       '<section class="cx-topo">' +
         '<span class="cx-topo-icone">' + icone("caixa") + "</span>" +
-        '<div class="cx-topo-texto"><h2>Caixa de entrada</h2><p>As respostas das marcas da sua base, direto do seu Gmail, separadas por nicho.</p></div>' +
+        '<div class="cx-topo-texto"><h2>Caixa de entrada</h2><p>As mensagens das marcas, do seu Gmail e do formulário do portfólio, separadas por nicho.</p></div>' +
         '<div class="cx-topo-acoes">' +
           (conectado
             ? '<span class="cx-status"><i></i>' + esc(estadoCx.conta || "Gmail conectado") + "</span>" +
               '<button type="button" class="btn btn-linha" id="cx-atualizar"' + (estadoCx.carregando ? " disabled" : "") + ">" + icone("sobe-desce") + (estadoCx.carregando ? "Lendo..." : "Atualizar") + "</button>"
-            : (clientIdGoogle() ? '<button type="button" class="btn btn-vinho" id="cx-conectar">' + icone("envelope") + "Conectar Gmail</button>" : "")) +
+            : (temId ? '<button type="button" class="btn btn-vinho" id="cx-conectar">' + icone("envelope") + "Conectar Gmail</button>" : "")) +
         "</div>" +
       "</section>";
 
-    if (!clientIdGoogle()) { painel.innerHTML = topo + guiaGoogleCx(); ligarGuiaCx(); return; }
-    if (!conectado) {
-      painel.innerHTML = topo +
-        '<div class="cartao bloco-espaco cx-conectar">' +
-          "<h2>Conecte o seu Gmail para ver as respostas</h2>" +
-          "<p>O painel pede ao Google só permissão de <b>leitura</b>: ele não envia, não apaga e não muda nada no seu Gmail. A conexão dura 1 hora; depois é só clicar de novo.</p>" +
-          (estadoCx.erro ? '<div class="faixa faixa-erro" style="margin:10px 0">' + esc(estadoCx.erro) + "</div>" : "") +
-          '<button type="button" class="btn btn-vinho" id="cx-conectar-grande">' + icone("envelope") + "Conectar Gmail</button>" +
-          '<p class="fraco" style="font-size:11.5px;margin-top:10px">Na primeira vez, o Google mostra o aviso "O Google não verificou este app". É o seu próprio painel: clique em Continuar.</p>' +
-          '<button type="button" class="link-botao" id="cx-trocar-id" style="margin-top:8px;font-size:12px">Trocar o Client ID do Google</button>' +
+    var faixaGmail = "";
+    if (!temId) {
+      faixaGmail = '<details class="dobra cx-ligar"><summary>' + icone("seta-dobra", "seta-dobra") +
+        '<span class="titulo"><strong>Ligue o seu Gmail para ver aqui também as respostas por e-mail</strong><small>Os contatos pelo portfólio já aparecem abaixo. Clique para ver o passo a passo do Google (uma vez só, uns 10 minutos).</small></span></summary>' +
+        '<div class="dobra-corpo">' + guiaGoogleCx() + "</div></details>";
+    } else if (!conectado) {
+      faixaGmail = '<div class="cartao cx-faixa-gmail">' +
+        '<div class="miolo"><strong>Gmail desligado</strong><small>Os contatos pelo portfólio já estão abaixo. Conecte o Gmail para ver também as respostas por e-mail. A conexão é só de leitura e dura 1 hora.</small></div>' +
+        '<button type="button" class="btn btn-vinho" id="cx-conectar-grande">' + icone("envelope") + "Conectar Gmail</button>" +
+        '<button type="button" class="link-botao" id="cx-trocar-id" style="font-size:12px">Trocar o Client ID</button>' +
         "</div>";
-      ligarTopoCx();
-      $("#cx-conectar-grande").addEventListener("click", conectarCx);
-      $("#cx-trocar-id").addEventListener("click", function () { try { localStorage.removeItem(CHAVE_CLIENT_ID); } catch (e) {} redesenhar(); });
-      return;
     }
 
-    var comEmail = dados.marcas.filter(function (m) { return !m.exemplo && emailValido(m.email); }).length;
+    reconhecerDeNovoCx();
+    var itens = itensCx();
     var porNicho = {}, novasPorNicho = {};
-    estadoCx.lista.forEach(function (t) { var n = nichoDaConversa(t); porNicho[n] = (porNicho[n] || 0) + 1; if (novaCx(t)) novasPorNicho[n] = (novasPorNicho[n] || 0) + 1; });
-    var nichos = Object.keys(porNicho).sort(function (a, b) { if (a === "Sem nicho") return 1; if (b === "Sem nicho") return -1; return a.localeCompare(b, "pt-BR"); });
-    var totalNovas = estadoCx.lista.filter(novaCx).length;
+    itens.forEach(function (t) { var n = nichoDaConversa(t); porNicho[n] = (porNicho[n] || 0) + 1; if (novaCx(t)) novasPorNicho[n] = (novasPorNicho[n] || 0) + 1; });
+    var nichos = Object.keys(porNicho).sort(function (a, b) {
+      if (a === "Marcas novas") return -1; if (b === "Marcas novas") return 1;
+      if (a === "Sem nicho") return 1; if (b === "Sem nicho") return -1;
+      return a.localeCompare(b, "pt-BR");
+    });
+    var totalNovas = itens.filter(novaCx).length;
     if (estadoCx.nicho !== "todos" && !porNicho[estadoCx.nicho]) estadoCx.nicho = "todos";
+    var comEmail = dados.marcas.filter(function (m) { return !m.exemplo && emailValido(m.email); }).length;
 
     painel.innerHTML = topo +
       (estadoCx.erro ? '<div class="faixa faixa-erro" style="margin-top:14px">' + esc(estadoCx.erro) + "</div>" : "") +
+      (faixaGmail ? '<div style="margin-top:14px">' + faixaGmail + "</div>" : "") +
       '<div class="cx-grade">' +
         '<aside class="cartao cx-nichos"><p class="lateral-secao" style="padding:0 8px 6px">Nichos</p><ul>' +
-          itemNichoCx("todos", "Todas as marcas", estadoCx.lista.length, totalNovas) +
+          itemNichoCx("todos", "Todas as marcas", itens.length, totalNovas) +
           nichos.map(function (n) { return itemNichoCx(n, n, porNicho[n], novasPorNicho[n] || 0); }).join("") +
         "</ul></aside>" +
         '<div class="cx-principal">' +
           '<div class="ferramentas">' +
             '<label class="busca"><span class="visualmente-oculto">Buscar</span>' + icone("busca") + '<input class="entrada" type="search" id="cx-busca" placeholder="Buscar por marca, assunto ou texto" value="' + esc(estadoCx.busca) + '"></label>' +
             '<div class="chips"><button type="button" class="chip" id="cx-so-novas" aria-pressed="' + estadoCx.soNovas + '">Só novas' + (totalNovas ? " <small>" + totalNovas + "</small>" : "") + "</button></div>" +
-            '<select class="entrada filtro-nicho" id="cx-periodo" aria-label="Período">' +
-              [["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["365", "Último ano"]].map(function (p) { return '<option value="' + p[0] + '"' + (estadoCx.periodo === p[0] ? " selected" : "") + ">" + p[1] + "</option>"; }).join("") +
-            "</select>" +
+            (conectado ? '<select class="entrada filtro-nicho" id="cx-periodo" aria-label="Período do Gmail">' +
+              [["30", "Gmail: 30 dias"], ["90", "Gmail: 90 dias"], ["365", "Gmail: 1 ano"]].map(function (p) { return '<option value="' + p[0] + '"' + (estadoCx.periodo === p[0] ? " selected" : "") + ">" + p[1] + "</option>"; }).join("") +
+            "</select>" : "") +
             '<span class="espaco"></span>' +
             (window.Notification ? '<button type="button" class="btn btn-fantasma" id="cx-avisar" aria-pressed="' + estadoCx.avisar + '">' + icone("ok") + (estadoCx.avisar && Notification.permission === "granted" ? "Avisando no computador" : "Avisar no computador") + "</button>" : "") +
           "</div>" +
           '<div id="cx-lista"></div>' +
-          '<p class="fraco" style="font-size:11.5px;margin-top:8px">' + (estadoCx.checadoEm ? "Conferido às " + estadoCx.checadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + ". " : "") +
-            "Enquanto o painel estiver aberto, ele confere de novo a cada 5 minutos. Aparecem só e-mails de quem está na sua aba Marcas (" + plural(comEmail, "marca com e-mail", "marcas com e-mail") + ").</p>" +
+          '<p class="fraco" style="font-size:11.5px;margin-top:8px">' + (estadoCx.checadoEm ? "Gmail conferido às " + estadoCx.checadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + ". " : "") +
+            "Enquanto o painel estiver aberto, ele confere de novo a cada 5 minutos. Do Gmail, aparecem as marcas da sua aba Marcas (" + plural(comEmail, "marca com e-mail", "marcas com e-mail") + ") e quem ainda não está na base mas escreveu falando de parceria, UGC, orçamento, proposta, publi ou campanha.</p>" +
         "</div>" +
       "</div>";
 
     ligarTopoCx();
+    if (!temId) ligarGuiaCx();
+    var cg = $("#cx-conectar-grande"); if (cg) cg.addEventListener("click", conectarCx);
+    var ti = $("#cx-trocar-id"); if (ti) ti.addEventListener("click", function () { try { localStorage.removeItem(CHAVE_CLIENT_ID); } catch (e) {} redesenhar(); });
     desenharListaCx();
     $(".cx-nichos", painel).addEventListener("click", function (e) {
       var b = e.target.closest("[data-nicho]"); if (!b) return;
@@ -3253,7 +3310,7 @@
     });
     $("#cx-busca").addEventListener("input", function () { estadoCx.busca = this.value; desenharListaCx(); });
     $("#cx-so-novas").addEventListener("click", function () { estadoCx.soNovas = !estadoCx.soNovas; this.setAttribute("aria-pressed", String(estadoCx.soNovas)); desenharListaCx(); });
-    $("#cx-periodo").addEventListener("change", function () { estadoCx.periodo = this.value; buscarCaixa(); });
+    var per = $("#cx-periodo"); if (per) per.addEventListener("change", function () { estadoCx.periodo = this.value; buscarCaixa(); });
     var av = $("#cx-avisar");
     if (av) av.addEventListener("click", function () {
       if (estadoCx.avisar) { estadoCx.avisar = false; try { localStorage.setItem(CHAVE_AVISAR, "0"); } catch (e) {} redesenhar(); return; }
@@ -3273,14 +3330,20 @@
 
   function desenharListaCx() {
     var caixa = $("#cx-lista"); if (!caixa) return;
-    if (!estadoCx.carregou) { caixa.innerHTML = '<p class="carregando">Lendo o seu Gmail...</p>'; return; }
+    var itens = itensCx();
+    if (tokenValido() && estadoCx.carregando && !estadoCx.carregou && !itens.length) { caixa.innerHTML = '<p class="carregando">Lendo o seu Gmail...</p>'; return; }
     var termo = normalizar(estadoCx.busca);
-    var lista = estadoCx.lista.filter(function (t) {
+    var lista = itens.filter(function (t) {
       if (estadoCx.nicho !== "todos" && nichoDaConversa(t) !== estadoCx.nicho) return false;
       if (estadoCx.soNovas && !novaCx(t)) return false;
-      return !termo || [nomeDaConversa(t), t.de.email, t.assunto, t.trecho].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
+      return !termo || [nomeDaConversa(t), t.de.email, t.de.nome, t.assunto, t.trecho].some(function (x) { return normalizar(x).indexOf(termo) >= 0; });
     });
-    if (!estadoCx.lista.length) { caixa.innerHTML = '<p class="vazio">Nenhum e-mail das marcas da sua base nos últimos ' + esc(estadoCx.periodo) + " dias. Quando uma marca responder, aparece aqui.</p>"; return; }
+    if (!itens.length) {
+      caixa.innerHTML = '<p class="vazio">' + (tokenValido()
+        ? "Nenhum contato pelo portfólio e nenhum e-mail das marcas da sua base nos últimos " + esc(estadoCx.periodo) + " dias. Quando uma marca escrever, aparece aqui."
+        : "Nenhum contato pelo portfólio ainda. Quando uma marca mandar o formulário do seu site, aparece aqui. Ligue o Gmail para ver também as respostas por e-mail.") + "</p>";
+      return;
+    }
     if (!lista.length) { caixa.innerHTML = '<p class="vazio">' + (estadoCx.soNovas ? "Nenhuma mensagem nova por aqui. Tudo lido." : "Nada encontrado com esse filtro.") + "</p>"; return; }
     caixa.innerHTML = '<ul class="cx-mensagens">' + lista.map(function (t) {
       var m = marcaDaConversa(t), nova = novaCx(t), nome = nomeDaConversa(t);
@@ -3288,17 +3351,19 @@
       var quando = d.toDateString() === hoje.toDateString() ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
       return '<li><button type="button" class="cx-mensagem' + (nova ? " nova" : "") + '" data-thread="' + esc(t.threadId) + '">' +
         '<span class="cx-ponto" aria-label="' + (nova ? "nova" : "lida") + '"></span>' +
-        '<span class="cx-avatar">' + esc(nome.replace(/^@/, "").charAt(0).toUpperCase()) + "</span>" +
+        '<span class="cx-avatar' + (t.tipo === "site" ? " site" : "") + '">' + esc(String(nome || "?").replace(/^@/, "").charAt(0).toUpperCase()) + "</span>" +
         '<span class="cx-miolo"><span class="cx-linha1"><strong>' + esc(nome) + "</strong>" +
+          (t.tipo === "site" ? '<span class="tag-site">pelo site</span>' : "") +
+          (t.tipo !== "site" && !m ? '<span class="tag-nova-marca">marca nova?</span>' : "") +
           (m && m.nicho ? '<span class="pilula sem-bola p-nicho">' + esc(m.nicho) + "</span>" : "") +
           (t.qtd > 1 ? '<small class="fraco">' + t.qtd + "</small>" : "") + "</span>" +
-          '<span class="cx-assunto">' + esc(t.assunto) + "</span>" +
+          '<span class="cx-assunto">' + esc(t.tipo === "site" && t.pessoa ? t.assunto + " · " + t.pessoa : t.assunto) + "</span>" +
           '<span class="cx-trecho">' + esc(t.trecho) + "</span></span>" +
         '<time class="cx-quando">' + esc(quando) + "</time></button></li>";
     }).join("") + "</ul>";
     caixa.onclick = function (e) {
       var b = e.target.closest(".cx-mensagem"); if (!b) return;
-      var t = estadoCx.lista.filter(function (x) { return x.threadId === b.getAttribute("data-thread"); })[0];
+      var t = itensCx().filter(function (x) { return x.threadId === b.getAttribute("data-thread"); })[0];
       if (t) abrirMensagemCx(t);
     };
   }
@@ -3339,7 +3404,40 @@
     return { html: html, texto: texto };
   }
 
+  function abrirContatoSite(t) {
+    var marca = marcaDaConversa(t);
+    var quando = new Date(t.data).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" });
+    var temEmail = emailValido(t.de.email);
+    var resposta = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(t.de.email) +
+      "&su=" + encodeURIComponent("Re: seu contato pelo meu portfólio") + "&body=" + encodeURIComponent("Oi, " + (t.pessoa ? primeiroNomeMarca(t.pessoa) : "tudo bem") + "!\n\n");
+    abrirJanela(cabecaJanela("Contato pelo portfólio") +
+      '<div class="janela-corpo">' +
+        '<div class="cx-ler-cabeca"><span class="cx-avatar grande">' + esc(String(t.de.nome || "?").charAt(0).toUpperCase()) + "</span>" +
+          "<div><strong>" + esc(t.pessoa || t.de.nome || "Sem nome") + "</strong>" + (t.de.email ? ' <span class="fraco">&lt;' + esc(t.de.email) + "&gt;</span>" : "") +
+          '<small class="fraco" style="display:block">' + esc(quando) + " · mandou o formulário do seu portfólio</small></div></div>" +
+        (marca ? '<div class="cx-ler-marca"><span>Marca: <b>' + esc(marca.nome) + "</b></span>" + (marca.nicho ? '<span class="pilula sem-bola p-nicho">' + esc(marca.nicho) + "</span>" : "") +
+          '<span class="pilula p-' + classe(marca.situacao) + '">' + esc(marca.situacao || "Lead") + "</span></div>" : "") +
+        '<div class="cx-ler-texto">' + esc(t.trecho) + "</div>" +
+      "</div>" +
+      '<div class="janela-rodape">' +
+        (temEmail ? '<a class="btn btn-vinho" href="' + esc(resposta) + '" target="_blank" rel="noopener">' + icone("envelope") + "Responder pelo Gmail</a>" : "") +
+        (marca && (marca.situacao || "Lead") === "Lead" ? '<button type="button" class="btn btn-linha" id="cx-conversando">' + icone("ok") + "Mudar para Conversando</button>" : "") +
+        (marca ? '<button type="button" class="btn btn-linha" id="cx-ver-marca">' + icone("marcas") + "Ver marca</button>" : "") +
+        '<span class="espaco"></span><button type="button" class="btn btn-fantasma" data-fechar>Fechar</button>' +
+      "</div>", true);
+    var b1 = $("#cx-conversando");
+    if (b1) b1.addEventListener("click", function () {
+      b1.disabled = true;
+      gravar("marcas", { situacao: "Conversando", ultimo_contato: hojeISO() }, marca.id).then(function (linha) {
+        trocarNaLista(dados.marcas, linha); avisoRapido(marca.nome + " agora está como Conversando"); b1.remove();
+      }).catch(function (e) { b1.disabled = false; avisoRapido(traduzirErro(e), true); });
+    });
+    var b2 = $("#cx-ver-marca"); if (b2) b2.addEventListener("click", function () { janela.close(); formularioMarca(marca); });
+    marcarVistoCx(t);
+  }
+
   async function abrirMensagemCx(t) {
+    if (t.tipo === "site") { abrirContatoSite(t); return; }
     abrirJanela(cabecaJanela(esc(t.assunto)) + '<div class="janela-corpo"><p class="carregando">Abrindo...</p></div>', true);
     janela.classList.add("extra-larga");
     var msg;
@@ -3377,7 +3475,8 @@
     rodape.innerHTML =
       '<a class="btn btn-vinho" href="' + linkGmail + '" target="_blank" rel="noopener">' + icone("link") + "Abrir e responder no Gmail</a>" +
       (marca && (marca.situacao || "Lead") === "Lead" ? '<button type="button" class="btn btn-linha" id="cx-conversando">' + icone("ok") + "Mudar para Conversando</button>" : "") +
-      (marca ? '<button type="button" class="btn btn-linha" id="cx-ver-marca">' + icone("marcas") + "Ver marca</button>" : "") +
+      (marca ? '<button type="button" class="btn btn-linha" id="cx-ver-marca">' + icone("marcas") + "Ver marca</button>"
+             : '<button type="button" class="btn btn-linha" id="cx-adicionar-marca">' + icone("mais") + "Adicionar na aba Marcas</button>") +
       (pediuSair && !jaDescadastrado ? '<button type="button" class="btn btn-perigo" id="cx-descadastrar">Descadastrar este e-mail</button>' : "") +
       '<span class="espaco"></span><button type="button" class="btn btn-fantasma" data-fechar>Fechar</button>';
     janela.appendChild(rodape);
@@ -3390,15 +3489,23 @@
       }).catch(function (e) { b1.disabled = false; avisoRapido(traduzirErro(e), true); });
     });
     var b2 = $("#cx-ver-marca"); if (b2) b2.addEventListener("click", function () { janela.close(); formularioMarca(marca); });
+    var b4 = $("#cx-adicionar-marca");
+    if (b4) b4.addEventListener("click", function () {
+      var dominio = (t.de.email.split("@")[1] || "");
+      // O nome da empresa vem do endereço (@cafebrasa.com.br vira "Cafebrasa"); a pessoa vai para a observação
+      var empresa = DOMINIOS_GENERICOS.test(dominio) ? "" : maiuscula(dominio.split(".")[0]);
+      var nome = empresa || t.de.nome || t.de.email.split("@")[0];
+      var inicial = { nome: nome, email: t.de.email, situacao: "Conversando", ultimo_contato: hojeISO(),
+        obs: (t.de.nome && empresa ? "Contato: " + t.de.nome + ". " : "") + "Escreveu no Gmail: " + t.assunto };
+      inicial.nicho = sugerirNicho(Object.assign({ instagram: "" }, inicial, { obs: inicial.obs + " " + t.trecho }));
+      janela.close();
+      formularioMarca(null, inicial);
+    });
     var b3 = $("#cx-descadastrar"); if (b3) b3.addEventListener("click", function () { b3.disabled = true; descadastrarPr(t.de.email, "respondeu SAIR").then(function () { b3.remove(); }); });
 
     // Abriu: deixa de ser nova
-    if (!vistoCx(t.ultimoId)) {
-      alternarMarcado("inbox:" + t.ultimoId, true).catch(function () {}).then(function () { atualizarSeloCaixa(); desenharListaCx(); redesenharNichosCx(); });
-      atualizarSeloCaixa(); desenharListaCx();
-    }
+    marcarVistoCx(t);
   }
-  function redesenharNichosCx() { if (abaAtual === "caixa" && $(".cx-nichos")) { var busca = estadoCx.busca; redesenhar(); estadoCx.busca = busca; } }
 
   // ---------- Guia de configuração do Google ----------
   function guiaGoogleCx() {

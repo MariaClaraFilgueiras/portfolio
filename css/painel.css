@@ -622,3 +622,11 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
   .cx-nichos ul{display:flex;flex-wrap:wrap;gap:4px}
   .cx-nicho{width:auto}
 }
+.cx-avatar.site{background:var(--vinho-suave);color:var(--vinho)}
+.cx-faixa-gmail{display:flex;flex-wrap:wrap;align-items:center;gap:10px;box-shadow:inset 3px 0 0 var(--vinho)}
+.cx-faixa-gmail .miolo{flex:1 1 300px;min-width:0}
+.cx-faixa-gmail strong{display:block;font-size:13px}
+.cx-faixa-gmail small{display:block;font-size:12px;color:var(--tinta-suave);margin-top:2px}
+.cx-ligar{margin-top:0}
+.cx-ligar .cx-guia{border:0;padding:0;margin:0;max-width:none}
+.tag-nova-marca{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:600;background:var(--amarelo-fundo);color:var(--amarelo);vertical-align:1px}
