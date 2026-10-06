@@ -240,6 +240,14 @@ button,input,textarea{font:inherit;color:inherit}
   font-family:var(--serifa);font-weight:700;font-size:17px;line-height:1.05;color:var(--vinho);
 }
 
+/* Logos das marcas dentro dos círculos */
+.marcas li.marca-logo{padding:11px;background:#fff;overflow:hidden}
+.marcas li.marca-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.marcas li.marca-cheio{padding:0}
+.marcas li.marca-cheio img{object-fit:cover}
+.marcas li.marca-escuro{background:var(--vinho)}
+.marcas li.marca-lavar img{filter:brightness(1.12) saturate(1.15)}
+
 /* =========================================================
    3. DESTAQUES
    ========================================================= */
@@ -1187,11 +1195,31 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   ];
 
   // MARCAS com quem você já trabalhou
+  // MARCAS: aparecem nos círculos que correm em "Marcas que confiam no meu trabalho".
+  // logo: arquivo em imagens/marcas/. Sem logo, aparece o nome escrito.
+  // estilo: "cheio" (a imagem ocupa o círculo todo), "escuro" (logo branca, fundo vinho) ou vazio (logo com respiro no fundo claro)
   var marcas = [
-    "Lalamove", "Skelt", "beba luci", "vero foods", "Mandacá",
-    "Antonieta Cucina Music Playce", "Viver de kombucha", "Maxfem", "Vasiven",
-    "Dolce Madre", "Natália Beauty", "Jacarandá", "Raiz Club",
-    "Amanri Ambiental", "Sou Concurseiro"
+    { nome: "Lalamove", logo: "imagens/marcas/lalamove.jpg", estilo: "lavar" },
+    { nome: "Skelt", logo: "imagens/marcas/skelt.jpg" },
+    { nome: "beba luci", logo: "imagens/marcas/beba-luci.png", estilo: "cheio" },
+    { nome: "vero foods", logo: "imagens/marcas/vero-foods.jpg", estilo: "cheio" },
+    { nome: "Mandacá", logo: "imagens/marcas/mandaca.png" },
+    { nome: "Antonietta Cucina", logo: "imagens/marcas/antonietta-cucina.jpg" },
+    { nome: "Marca parceira", logo: "imagens/marcas/marca-m.png", estilo: "cheio" },          // TROCAR: qual é o nome desta marca (logo "m" com play)?
+    { nome: "Viver de Kombucha", logo: "imagens/marcas/viver-de-kombucha.jpg" },
+    { nome: "Maxfem", logo: "imagens/marcas/maxfem.png" },
+    { nome: "Vasiven", logo: "imagens/marcas/vasiven.png" },
+    { nome: "Arena Beauty", logo: "imagens/marcas/arena-beauty.png", estilo: "escuro" },
+    { nome: "Natália Beauty", logo: "imagens/marcas/natalia-beauty.jpg", estilo: "cheio" },
+    { nome: "Jacarandá", logo: "imagens/marcas/jacaranda.jpg" },
+    { nome: "Raiz Club", logo: "imagens/marcas/raiz-club.png" },
+    { nome: "Amanri Ambiental", logo: "imagens/marcas/amanri.png" },
+    { nome: "Sou Concurseiro", logo: "imagens/marcas/sou-concurseiro.jpg", estilo: "cheio" },
+    { nome: "União Vegetal", logo: "imagens/marcas/uniao-vegetal.jpg" },
+    { nome: "Clube Aura", logo: "imagens/marcas/clube-aura.png", estilo: "cheio" },
+    { nome: "Marca parceira", logo: "imagens/marcas/marca-q.png", estilo: "cheio" },          // TROCAR: qual é o nome desta marca (logo "Q" com cérebro e coração)?
+    { nome: "Collum", logo: "imagens/marcas/collum.png" },
+    { nome: "Dolce Madre" }                                                                    // sem logo ainda: aparece o nome
   ];
 
   // FONTES das matérias sobre o mercado de UGC
@@ -1360,7 +1388,11 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   }).join("");
 
   // Marcas (a segunda cópia existe só para o movimento contínuo)
-  var itensMarcas = marcas.map(function (m) { return "<li>" + esc(m) + "</li>"; }).join("");
+  var itensMarcas = marcas.map(function (m) {
+    if (typeof m === "string") m = { nome: m };
+    if (!m.logo) return "<li>" + esc(m.nome) + "</li>";
+    return '<li class="marca-logo' + (m.estilo ? " marca-" + esc(m.estilo) : "") + '"><img src="' + esc(m.logo) + '" alt="' + esc(m.nome === "Marca parceira" ? "Logo de marca parceira" : "Logo " + m.nome) + '" loading="lazy"></li>';
+  }).join("");
   document.getElementById("marcas-lista").innerHTML =
     '<ul class="marcas">' + itensMarcas + "</ul>" +
     '<ul class="marcas" aria-hidden="true">' + itensMarcas + "</ul>";
