@@ -47,6 +47,7 @@
     "Conteúdo para e-commerce": ["E-commerce content", "Contenido para e-commerce"],
     "Publicação no perfil": ["Posting on my profile", "Publicación en mi perfil"],
     "Marcas parceiras": ["Partner brands", "Marcas aliadas"],
+    "Marcas trabalhadas": ["Brands worked with", "Marcas trabajadas"],
     "Nichos atendidos": ["Niches served", "Nichos atendidos"],
     "De marketing digital": ["In digital marketing", "De marketing digital"],
     "Prazo de entrega": ["Delivery time", "Plazo de entrega"],
