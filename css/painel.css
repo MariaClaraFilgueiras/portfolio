@@ -630,3 +630,16 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
 .cx-ligar{margin-top:0}
 .cx-ligar .cx-guia{border:0;padding:0;margin:0;max-width:none}
 .tag-nova-marca{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:600;background:var(--amarelo-fundo);color:var(--amarelo);vertical-align:1px}
+
+/* Abas que ainda vão ser montadas */
+.em-breve{max-width:560px;margin:40px auto;text-align:center;padding:36px 28px}
+.em-breve-icone{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--vinho-suave);color:var(--vinho);margin-bottom:14px}
+.em-breve-icone .icone{width:26px;height:26px}
+.em-breve h2{font-size:16px;margin-bottom:8px}
+.em-breve p{color:var(--tinta-suave);font-size:13px;line-height:1.6}
+.em-breve p + p{margin-top:10px;font-size:12px}
+/* Menu mais compacto, para caber as 5 seções */
+.lateral-secao{padding:10px 10px 4px}
+.lateral-item{padding:6px 10px}
+.lateral-marca{padding:14px 18px 8px}
+.lateral-link-site{margin:4px 10px 6px;padding:6px 10px}

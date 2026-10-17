@@ -301,12 +301,30 @@
     marcas: { titulo: "Marcas", sub: "a minha base de contatos", desenhar: desenharMarcas },
     prospeccao: { titulo: "Prospecção", sub: "e-mail de apresentação para as marcas", desenhar: desenharProspeccao },
     caixa: { titulo: "Caixa de entrada", sub: "respostas das marcas, do seu Gmail", desenhar: desenharCaixa },
+    propostas: { titulo: "Propostas", sub: "propostas comerciais para as marcas", desenhar: emBreve("propostas", "Aqui vão ficar as suas propostas comerciais para as marcas: o que foi oferecido, os valores e se a marca aceitou.") },
+    financeiro: { titulo: "Financeiro", sub: "o que entra e o que sai", desenhar: emBreve("financeiro", "Aqui vai ficar o seu financeiro: o que já entrou, o que falta receber e as suas despesas.") },
+    contratos: { titulo: "Contratos", sub: "os acordos com as marcas", desenhar: emBreve("contratos", "Aqui vão ficar os contratos das suas campanhas, com prazos, valores e o que foi combinado com cada marca.") },
+    roteiros: { titulo: "Roteiros", sub: "do rascunho ao aprovado", desenhar: emBreve("roteiros", "Aqui vão ficar os roteiros dos seus vídeos, do primeiro rascunho até a versão aprovada pela marca.") },
+    instagram: { titulo: "Instagram", sub: "o seu perfil no Instagram", desenhar: emBreve("insta", "Aqui vai ficar o que você quiser acompanhar do seu Instagram: planejamento de posts, ideias e números.") },
+    tiktok: { titulo: "TikTok", sub: "o seu perfil no TikTok", desenhar: emBreve("tiktok", "Aqui vai ficar o que você quiser acompanhar do seu TikTok: planejamento de vídeos, ideias e números.") },
     calendario: { titulo: "Calendário", sub: "gravar, editar e postar", desenhar: desenharCalendario },
     campanhas: { titulo: "Campanhas", sub: "trabalhos fechados", desenhar: desenharCampanhas },
     checklist: { titulo: "Checklist Portfólio", sub: "consulta e revisão", desenhar: desenharChecklist },
     transcricoes: { titulo: "Transcrições", sub: "vídeos que eu gosto, com roteiro e observações", desenhar: desenharTranscricoes }
   };
   var abaAtual = "portfolio";
+
+  // Página simples para as abas que ainda vamos montar juntas
+  function emBreve(nomeIcone, texto) {
+    return function (painel) {
+      painel.innerHTML = '<div class="cartao em-breve">' +
+        '<span class="em-breve-icone">' + icone(nomeIcone) + "</span>" +
+        "<h2>Esta aba ainda vai ser montada</h2>" +
+        "<p>" + esc(texto) + "</p>" +
+        '<p class="fraco">Quando quiser, me conte o que você precisa aqui que eu monto junto com você.</p>' +
+      "</div>";
+    };
+  }
 
   function abaDoEndereco() {
     var h = location.hash.replace("#", "");
