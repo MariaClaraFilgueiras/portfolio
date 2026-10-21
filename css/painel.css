@@ -643,3 +643,47 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
 .lateral-item{padding:6px 10px}
 .lateral-marca{padding:14px 18px 8px}
 .lateral-link-site{margin:4px 10px 6px;padding:6px 10px}
+
+/* =========================================================
+   ABA ROTEIROS: o quadro da semana
+   ========================================================= */
+.t-tiktok{background:#e4e6ea;color:#1f2430}
+.t-instagram{background:#f6dfee;color:#8a2a6b}
+.rt-redes{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--nude-claro);margin-bottom:14px}
+.rt-rede{display:inline-flex;align-items:center;gap:7px;border:0;background:none;padding:8px 18px;border-radius:999px;font-size:13px;font-weight:500;color:var(--tinta-suave)}
+.rt-rede small{font-size:11px;color:var(--tinta-fraca)}
+.rt-rede[aria-selected="true"]{background:var(--branco);color:var(--vinho);font-weight:600;box-shadow:0 1px 4px rgba(36,30,27,.12)}
+.rt-topo{margin-bottom:6px}
+.rt-dica{font-size:11.5px;margin-bottom:12px}
+.rt-dica a{color:var(--vinho);font-weight:600}
+.rt-quadro{display:grid;grid-template-columns:repeat(8,minmax(170px,1fr));gap:10px;overflow-x:auto;padding-bottom:10px;align-items:start}
+.rt-coluna{display:flex;flex-direction:column;gap:8px;min-height:220px;padding:10px;border-radius:12px;background:var(--nude-claro);border:1.5px solid transparent;transition:border-color .15s ease,background .15s ease}
+.rt-coluna.ideias{background:#efe6de}
+.rt-coluna.hoje{background:#fbf0f1;border-color:rgba(79,24,33,.25)}
+.rt-coluna.alvo{border-color:var(--vinho);background:#f7eae6}
+.rt-coluna header{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;padding:2px 2px 4px}
+.rt-coluna header strong{font-size:12.5px}
+.rt-coluna header small{font-size:11px;color:var(--tinta-fraca)}
+.rt-coluna.hoje header strong,.rt-coluna.hoje header small{color:var(--vinho)}
+.rt-conta{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--tinta-suave);background:var(--branco);border-radius:999px;padding:1px 7px}
+.rt-cartoes{display:flex;flex-direction:column;gap:7px}
+.rt-cartao{background:var(--branco);border-radius:9px;padding:9px 10px;box-shadow:0 1px 3px rgba(36,30,27,.1);cursor:grab;border-left:3px solid var(--nude)}
+.rt-cartao:hover{box-shadow:0 4px 12px rgba(36,30,27,.14)}
+.rt-cartao.arrastando{opacity:.4}
+.rt-cartao strong{display:block;font-size:12.5px;line-height:1.35}
+.rt-cartao p{font-size:11.5px;color:var(--tinta-suave);margin-top:3px;line-height:1.4}
+.rt-cartao footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:7px}
+.rt-cartao footer small{font-size:10.5px;color:var(--tinta-fraca)}
+.rt-st{font-size:10.5px;padding:1px 7px}
+.st-ideia{border-left-color:#c9bdb2}
+.st-roteiro{border-left-color:#b0761c}
+.st-roteiro .rt-st{background:var(--amarelo-fundo);color:var(--amarelo)}
+.st-gravado{border-left-color:#3d5f86}
+.st-gravado .rt-st{background:#e1e8f1;color:#3d5f86}
+.st-editado{border-left-color:#51406a}
+.st-editado .rt-st{background:#e7e0ee;color:#51406a}
+.st-postado{border-left-color:var(--verde);opacity:.75}
+.st-postado .rt-st{background:#dde9e1;color:var(--verde)}
+.rt-adicionar{display:flex;align-items:center;gap:6px;border:0;background:none;padding:6px 4px;border-radius:7px;font-size:12px;color:var(--tinta-suave);margin-top:auto}
+.rt-adicionar:hover{background:rgba(255,255,255,.7);color:var(--vinho)}
+.rt-adicionar .icone{width:14px;height:14px}
