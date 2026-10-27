@@ -156,7 +156,7 @@
     transcricoes: ["id", "criado_em", "link", "plataforma", "titulo", "criador", "transcricao", "observacoes", "exemplo"],
     email_envios: ["id", "data", "email", "assunto", "status", "erro", "resend_id", "canal", "marca_id"],
     email_optout: ["email", "data", "motivo"],
-    roteiros: ["id", "criado_em", "rede", "titulo", "data", "status", "formato", "roteiro", "legenda", "link", "exemplo"]
+    roteiros: ["id", "criado_em", "rede", "quadro", "titulo", "data", "status", "formato", "roteiro", "legenda", "link", "exemplo"]
   };
   var faltando = {};        // campos que não existem, por tabela
   var tabelaFalta = {};     // tabelas que não existem
@@ -1536,7 +1536,7 @@
      8. ABA CALENDÁRIO
      ========================================================= */
   var TIPOS_CAL = [["gravar", "Gravar"], ["editar", "Editar"], ["postar", "Postar"]];
-  var ORDEM_TIPO = { gravar: 0, editar: 1, postar: 2, prazo: 3, tiktok: 4, instagram: 5 };
+  var ORDEM_TIPO = { gravar: 0, editar: 1, postar: 2, prazo: 3, tiktok: 4, instagram: 5, stories: 6 };
   var estadoCal = { mes: null, filtro: "todos" };
 
   function eventosDoCalendario() {
@@ -1551,8 +1551,10 @@
     // Os roteiros com data (aba Roteiros) também entram sozinhos
     dados.roteiros.forEach(function (r) {
       if (!r.data) return;
-      var rede = r.rede === "instagram" ? "instagram" : "tiktok";
-      itens.push({ fonte: "roteiro", id: r.id, titulo: (rede === "instagram" ? "Instagram: " : "TikTok: ") + (r.titulo || "roteiro"), marca: "", tipo: rede, data: r.data, feito: r.status === "postado", exemplo: r.exemplo });
+      var q = quadroDe(r);
+      var tipo = q === "tiktok" ? "tiktok" : q === "stories" ? "stories" : "instagram";
+      var prefixo = q === "tiktok" ? "TikTok: " : q === "stories" ? "Stories: " : "Feed: ";
+      itens.push({ fonte: "roteiro", id: r.id, titulo: prefixo + (r.titulo || "roteiro"), marca: "", tipo: tipo, data: r.data, feito: r.status === "postado", exemplo: r.exemplo });
     });
     return itens.filter(function (i) { return i.data; });
   }
@@ -1616,7 +1618,7 @@
         '<div class="cal-semana" aria-hidden="true"><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span><span>dom</span></div>' +
         '<div class="cal-grade" id="cal-grade">' + celulas + "</div>" +
       "</div>" +
-      '<div class="legenda"><span><i class="t-gravar"></i>Gravar</span><span><i class="t-editar"></i>Editar</span><span><i class="t-postar"></i>Postar</span><span><i class="t-prazo"></i>Prazo de campanha (vem sozinho da aba Campanhas)</span><span><i class="t-tiktok"></i>TikTok</span><span><i class="t-instagram"></i>Instagram (vêm sozinhos da aba Roteiros)</span></div>' +
+      '<div class="legenda"><span><i class="t-gravar"></i>Gravar</span><span><i class="t-editar"></i>Editar</span><span><i class="t-postar"></i>Postar</span><span><i class="t-prazo"></i>Prazo de campanha (vem sozinho da aba Campanhas)</span><span><i class="t-tiktok"></i>TikTok</span><span><i class="t-instagram"></i>Instagram Feed</span><span><i class="t-stories"></i>Instagram Stories (vêm sozinhos da aba Roteiros)</span></div>' +
       '<div class="cartao bloco-espaco"><div class="cartao-cabeca"><h2>Ficou pra trás</h2><span class="fraco">passou do dia e não foi feito</span></div>' +
         (atrasados.length ? '<ul class="lista-simples">' + atrasados.map(function (c) {
           var dias = diasEntre(String(c.data).slice(0, 10), hoje);
@@ -3576,7 +3578,9 @@
      ========================================================= */
   var REDES_RT = [["tiktok", "TikTok", "tiktok"], ["instagram", "Instagram", "insta"]];
   var STATUS_RT = [["ideia", "Ideia"], ["roteiro", "Roteiro pronto"], ["gravado", "Gravado"], ["editado", "Editado"], ["postado", "Postado"]];
-  var FORMATOS_RT = { tiktok: ["Vídeo", "Carrossel de fotos", "Live"], instagram: ["Reels", "Carrossel", "Post", "Stories", "Live"] };
+  var FORMATOS_RT = { tiktok: ["Vídeo", "Carrossel de fotos", "Live"], feed: ["Reels", "Carrossel", "Post", "Live"], stories: ["Stories", "Sequência de stories", "Enquete", "Caixinha de perguntas", "Bastidores"] };
+  // No Instagram, cada roteiro fica no quadro do Feed ou no dos Stories
+  var QUADROS_RT = { tiktok: [["tiktok", ""]], instagram: [["feed", "Feed"], ["stories", "Stories"]] };
   var DIAS_RT = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
   var estadoRt = { rede: "tiktok", semana: null };
   var arrastandoRt = null;
@@ -3584,6 +3588,14 @@
   function nomeRede(r) { return (REDES_RT.filter(function (x) { return x[0] === r; })[0] || ["", r])[1]; }
   function nomeStatusRt(s) { return (STATUS_RT.filter(function (x) { return x[0] === s; })[0] || ["", s])[1]; }
   function segundaDaSemana(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+
+  // Em qual quadro o roteiro fica: TikTok, Feed ou Stories
+  function quadroDe(r) {
+    if ((r.rede || "tiktok") !== "instagram") return "tiktok";
+    if (r.quadro === "feed" || r.quadro === "stories") return r.quadro;
+    // Se o banco ainda não tiver o campo "quadro", decide pelo formato
+    return /stor|enquete|caixinha|bastidor/i.test(r.formato || "") ? "stories" : "feed";
+  }
 
   function desenharRoteiros(painel) {
     if (tabelaFalta.roteiros) {
@@ -3596,12 +3608,10 @@
     var dias = []; for (var i = 0; i < 7; i++) { var d = new Date(seg); d.setDate(seg.getDate() + i); dias.push(isoDe(d)); }
     var estaSemana = isoDe(segundaDaSemana(new Date())) === dias[0];
     var daRede = dados.roteiros.filter(function (r) { return (r.rede || "tiktok") === estadoRt.rede; });
-    var semData = daRede.filter(function (r) { return !r.data; });
-    var porDia = {}; dias.forEach(function (x) { porDia[x] = []; });
-    daRede.forEach(function (r) { var x = String(r.data || "").slice(0, 10); if (porDia[x]) porDia[x].push(r); });
     var fim = dataDe(dias[6]), ini = dataDe(dias[0]);
     var rotuloSemana = ini.getDate() + (ini.getMonth() !== fim.getMonth() ? " de " + MESES_RT[ini.getMonth()] : "") + " a " + fim.getDate() + " de " + MESES_RT[fim.getMonth()] + (fim.getFullYear() !== new Date().getFullYear() ? " de " + fim.getFullYear() : "");
     var noMes = daRede.filter(function (r) { return r.data && String(r.data).slice(0, 7) === hoje.slice(0, 7); }).length;
+    var quadros = QUADROS_RT[estadoRt.rede];
 
     painel.innerHTML =
       '<div class="rt-redes" role="tablist">' + REDES_RT.map(function (x) {
@@ -3615,29 +3625,38 @@
         '<button type="button" class="btn btn-linha" id="rt-hoje"' + (estaSemana ? " disabled" : "") + ">Esta semana</button>" +
         '<span class="espaco" style="flex:1"></span>' +
         '<span class="fraco" style="font-size:12px">' + plural(noMes, "roteiro com data neste mês", "roteiros com data neste mês") + "</span>" +
-        '<button type="button" class="btn btn-vinho" id="rt-novo">' + icone("mais") + "Novo roteiro</button>" +
+        (quadros.length === 1 ? '<button type="button" class="btn btn-vinho rt-novo" data-quadro="' + quadros[0][0] + '">' + icone("mais") + "Novo roteiro</button>" : "") +
       "</div>" +
-      '<p class="fraco rt-dica">Arraste um cartão para outro dia para mudar a data. Todo roteiro com data aparece sozinho no <a href="#calendario">Calendário</a>.</p>' +
-      '<div class="rt-quadro" id="rt-quadro">' +
-        colunaRt("", "Ideias", "sem data", semData, false) +
-        dias.map(function (x, k) { return colunaRt(x, DIAS_RT[k], dataBR(x).slice(0, 5), porDia[x], x === hoje); }).join("") +
-      "</div>";
+      '<p class="fraco rt-dica">Arraste um cartão para outro dia para mudar a data' + (quadros.length > 1 ? ", ou de um quadro para o outro para trocar entre Feed e Stories" : "") +
+        '. Todo roteiro com data aparece sozinho no <a href="#calendario">Calendário</a>.</p>' +
+      quadros.map(function (q) {
+        var doQuadro = daRede.filter(function (r) { return quadroDe(r) === q[0]; });
+        var semData = doQuadro.filter(function (r) { return !r.data; });
+        var porDia = {}; dias.forEach(function (x) { porDia[x] = []; });
+        doQuadro.forEach(function (r) { var x = String(r.data || "").slice(0, 10); if (porDia[x]) porDia[x].push(r); });
+        return (q[1] ? '<div class="rt-quadro-cabeca q-' + q[0] + '"><h2>' + icone(q[0] === "stories" ? "stories" : "insta") + esc(q[1]) +
+            ' <small>' + plural(doQuadro.length, "roteiro", "roteiros") + '</small></h2><button type="button" class="btn btn-vinho rt-novo" data-quadro="' + q[0] + '">' + icone("mais") + "Novo roteiro no " + esc(q[1]) + "</button></div>" : "") +
+          '<div class="rt-quadro" data-quadro="' + q[0] + '">' +
+            colunaRt("", "Ideias", "sem data", semData, false, q[0]) +
+            dias.map(function (x, k) { return colunaRt(x, DIAS_RT[k], dataBR(x).slice(0, 5), porDia[x], x === hoje, q[0]); }).join("") +
+          "</div>";
+      }).join("");
 
     $$(".rt-rede", painel).forEach(function (b) { b.addEventListener("click", function () { estadoRt.rede = b.getAttribute("data-rede"); redesenhar(); }); });
     $("#rt-antes").addEventListener("click", function () { var d = new Date(seg); d.setDate(d.getDate() - 7); estadoRt.semana = d; redesenhar(); });
     $("#rt-depois").addEventListener("click", function () { var d = new Date(seg); d.setDate(d.getDate() + 7); estadoRt.semana = d; redesenhar(); });
     $("#rt-hoje").addEventListener("click", function () { estadoRt.semana = null; redesenhar(); });
-    $("#rt-novo").addEventListener("click", function () { formularioRoteiro(null, ""); });
-    ligarQuadroRt();
+    $$(".rt-novo", painel).forEach(function (b) { b.addEventListener("click", function () { formularioRoteiro(null, "", b.getAttribute("data-quadro")); }); });
+    $$(".rt-quadro", painel).forEach(ligarQuadroRt);
   }
   var MESES_RT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
-  function colunaRt(iso, nome, sub, lista, ehHoje) {
+  function colunaRt(iso, nome, sub, lista, ehHoje, quadro) {
     lista = lista.slice().sort(function (a, b) { return STATUS_RT.map(function (s) { return s[0]; }).indexOf(a.status) - STATUS_RT.map(function (s) { return s[0]; }).indexOf(b.status) || numero(a.id) - numero(b.id); });
     return '<section class="rt-coluna' + (ehHoje ? " hoje" : "") + (iso ? "" : " ideias") + '" data-data="' + iso + '">' +
       '<header><strong>' + esc(nome) + "</strong><small>" + esc(ehHoje ? "hoje · " + sub : sub) + "</small>" + (lista.length ? '<span class="rt-conta">' + lista.length + "</span>" : "") + "</header>" +
       '<div class="rt-cartoes">' + lista.map(cartaoRt).join("") + "</div>" +
-      '<button type="button" class="rt-adicionar" data-data="' + iso + '">' + icone("mais") + "Adicionar</button>" +
+      '<button type="button" class="rt-adicionar" data-data="' + iso + '" data-quadro="' + quadro + '">' + icone("mais") + "Adicionar</button>" +
     "</section>";
   }
 
@@ -3650,11 +3669,12 @@
     "</article>";
   }
 
-  function ligarQuadroRt() {
-    var q = $("#rt-quadro");
+  // Cada quadro (TikTok, Feed ou Stories) recebe os cliques e o arrastar
+  function ligarQuadroRt(q) {
+    var quadro = q.getAttribute("data-quadro");
     q.addEventListener("click", function (e) {
       var add = e.target.closest(".rt-adicionar");
-      if (add) { formularioRoteiro(null, add.getAttribute("data-data")); return; }
+      if (add) { formularioRoteiro(null, add.getAttribute("data-data"), quadro); return; }
       var c = e.target.closest(".rt-cartao");
       if (c) { var r = acharPorId(dados.roteiros, c.getAttribute("data-id")); if (r) formularioRoteiro(r); }
     });
@@ -3663,7 +3683,6 @@
       var c = e.target.closest(".rt-cartao"); if (!c) return;
       var r = acharPorId(dados.roteiros, c.getAttribute("data-id")); if (r) formularioRoteiro(r);
     });
-    // Arrastar de um dia para outro muda a data
     q.addEventListener("dragstart", function (e) {
       var c = e.target.closest(".rt-cartao"); if (!c) return;
       arrastandoRt = c.getAttribute("data-id");
@@ -3673,49 +3692,64 @@
     });
     q.addEventListener("dragend", function (e) {
       var c = e.target.closest(".rt-cartao"); if (c) c.classList.remove("arrastando");
-      $$(".rt-coluna.alvo", q).forEach(function (x) { x.classList.remove("alvo"); });
+      $$(".rt-coluna.alvo").forEach(function (x) { x.classList.remove("alvo"); });
       arrastandoRt = null;
     });
     q.addEventListener("dragover", function (e) {
       var col = e.target.closest(".rt-coluna"); if (!col || !arrastandoRt) return;
       e.preventDefault();
-      $$(".rt-coluna.alvo", q).forEach(function (x) { if (x !== col) x.classList.remove("alvo"); });
+      $$(".rt-coluna.alvo").forEach(function (x) { if (x !== col) x.classList.remove("alvo"); });
       col.classList.add("alvo");
     });
     q.addEventListener("drop", function (e) {
       var col = e.target.closest(".rt-coluna"); if (!col || !arrastandoRt) return;
       e.preventDefault();
-      moverRoteiro(arrastandoRt, col.getAttribute("data-data") || null);
+      moverRoteiro(arrastandoRt, col.getAttribute("data-data") || null, quadro);
     });
   }
 
-  function moverRoteiro(id, data) {
+  // Arrastar muda a data e, no Instagram, pode trocar entre Feed e Stories
+  function moverRoteiro(id, data, quadro) {
     var r = acharPorId(dados.roteiros, id); if (!r) return;
-    if (String(r.data || "") === String(data || "")) return;
-    gravar("roteiros", { data: data }, r.id).then(function (linha) {
+    var mudaQuadro = quadro && quadro !== "tiktok" && quadro !== quadroDe(r);
+    if (String(r.data || "") === String(data || "") && !mudaQuadro) return;
+    var val = { data: data };
+    if (mudaQuadro) val.quadro = quadro;
+    gravar("roteiros", val, r.id).then(function (linha) {
       trocarNaLista(dados.roteiros, linha);
-      avisoRapido(data ? "Agendado para " + diaLongoFmt.format(dataDe(data)) + ". Já está no Calendário." : "Voltou para as ideias, sem data.");
+      var onde = mudaQuadro ? (quadro === "stories" ? "Foi para os Stories" : "Foi para o Feed") + (data ? ", " + diaLongoFmt.format(dataDe(data)) : ", sem data") + "." : "";
+      avisoRapido(onde || (data ? "Agendado para " + diaLongoFmt.format(dataDe(data)) + ". Já está no Calendário." : "Voltou para as ideias, sem data."));
       redesenhar();
     }).catch(function (e) { avisoRapido(traduzirErro(e), true); });
   }
 
-  function formularioRoteiro(r, dataInicial) {
+  function formularioRoteiro(r, dataInicial, quadroInicial) {
     var rede = r ? (r.rede || "tiktok") : estadoRt.rede;
+    var quadro = r ? quadroDe(r) : (quadroInicial || QUADROS_RT[rede][0][0]);
+    var temCampoQuadro = !(faltando.roteiros && faltando.roteiros.quadro);
+    var nomeQuadro = rede === "instagram" ? (quadro === "stories" ? " Stories" : " Feed") : "";
+    var formatos = rede === "instagram" ? FORMATOS_RT.feed.concat(FORMATOS_RT.stories) : FORMATOS_RT.tiktok;
+    var campos = [
+      { nome: "titulo", rotulo: "Título", obrigatorio: true, inteiro: true, dica: "ex: unboxing do kit de skincare" },
+      { nome: "data", rotulo: "Data do post", tipo: "data" },
+      { nome: "status", rotulo: "Situação", tipo: "selecao", opcoes: STATUS_RT }
+    ];
+    if (rede === "instagram" && temCampoQuadro) campos.push({ nome: "quadro", rotulo: "Onde vai", tipo: "selecao", opcoes: [["feed", "Feed"], ["stories", "Stories"]] });
+    campos.push(
+      { nome: "formato", rotulo: "Formato", sugestoes: formatos, inteiro: !(rede === "instagram" && temCampoQuadro) },
+      { nome: "roteiro", rotulo: "Roteiro", tipo: "area", dica: quadro === "stories" ? "Stories 1, Stories 2, Stories 3... o que aparece em cada um." : "Gancho, meio e fechamento. Pode colar da aba Transcrições ou do Checklist." },
+      { nome: "legenda", rotulo: quadro === "stories" ? "Texto na tela, enquete ou link" : "Legenda do post", tipo: "area", dica: quadro === "stories" ? "o que vai escrito nos stories, a pergunta da enquete ou o link" : "o texto que vai junto com o post, com as hashtags" },
+      { nome: "link", rotulo: "Link do post (depois de postado)", tipo: "url", inteiro: true }
+    );
     abrirFormulario({
-      titulo: (r ? "Editar roteiro" : "Novo roteiro") + " · " + nomeRede(rede),
-      valores: r || { rede: rede, data: dataInicial || null, status: "ideia", formato: FORMATOS_RT[rede][0] },
+      titulo: (r ? "Editar roteiro" : "Novo roteiro") + " · " + nomeRede(rede) + nomeQuadro,
+      valores: r ? Object.assign({}, r, { quadro: quadro }) : { rede: rede, quadro: quadro, data: dataInicial || null, status: "ideia", formato: FORMATOS_RT[quadro][0] },
       nota: "Com data, o roteiro aparece sozinho no Calendário, no dia do post.",
-      campos: [
-        { nome: "titulo", rotulo: "Título", obrigatorio: true, inteiro: true, dica: "ex: unboxing do kit de skincare" },
-        { nome: "data", rotulo: "Data do post", tipo: "data" },
-        { nome: "status", rotulo: "Situação", tipo: "selecao", opcoes: STATUS_RT },
-        { nome: "formato", rotulo: "Formato", sugestoes: FORMATOS_RT[rede], inteiro: true },
-        { nome: "roteiro", rotulo: "Roteiro", tipo: "area", dica: "Gancho, meio e fechamento. Pode colar da aba Transcrições ou do Checklist." },
-        { nome: "legenda", rotulo: "Legenda do post", tipo: "area", dica: "o texto que vai junto com o post, com as hashtags" },
-        { nome: "link", rotulo: "Link do post (depois de postado)", tipo: "url", inteiro: true }
-      ],
+      campos: campos,
       aoSalvar: function (val) {
         val.rede = rede;
+        if (rede !== "instagram") val.quadro = "feed";
+        else if (!temCampoQuadro) delete val.quadro;
         return gravar("roteiros", val, r ? r.id : null).then(function (linha) {
           trocarNaLista(dados.roteiros, linha);
           if (linha.data && (!r || r.data !== linha.data)) avisoRapido("Salvo. Já aparece no Calendário em " + dataBR(linha.data) + ".");

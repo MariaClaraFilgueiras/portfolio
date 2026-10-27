@@ -24,6 +24,11 @@ create table if not exists public.roteiros (
 );
 create index if not exists roteiros_data_idx on public.roteiros (data);
 
+-- No Instagram, cada roteiro fica no quadro do Feed ou no dos Stories
+alter table public.roteiros add column if not exists quadro text not null default 'feed';
+alter table public.roteiros drop constraint if exists roteiros_quadro_check;
+alter table public.roteiros add constraint roteiros_quadro_check check (quadro in ('feed', 'stories'));
+
 -- A tranca: só você, logada, lê e escreve. Ninguém de fora vê nada.
 alter table public.roteiros enable row level security;
 revoke all on public.roteiros from anon;
