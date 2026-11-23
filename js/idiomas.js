@@ -176,6 +176,7 @@
     "Assistir ao vídeo": ["Watch the video", "Ver el video"],
     "Abrir no YouTube ↗": ["Open on YouTube ↗", "Abrir en YouTube ↗"],
     "Fechar vídeo": ["Close video", "Cerrar video"],
+    "Transcrição": ["Transcript", "Transcripción"],
     "Vídeo": ["Video", "Video"],
 
     // Galeria e feedbacks

@@ -253,6 +253,24 @@ button,input,textarea{font:inherit;color:inherit}
 /* capas do YouTube: o vídeo vertical fica no meio da imagem */
 .video-capa .midia img{object-fit:cover;object-position:center}
 
+/* Transcrição ao lado do vídeo (aparece só quando o vídeo tem texto no idioma do site) */
+.player-corpo{display:flex;gap:20px;align-items:stretch;width:100%}
+.player-video{display:flex;flex-direction:column;align-items:center;gap:12px;flex:0 0 100%}
+.player.com-texto .player-caixa{width:min(860px, 100%)}
+.player.com-texto .player-video{flex:0 0 min(380px, calc((100vh - 120px) * 9 / 16))}
+.player-texto{flex:1;min-width:0;max-height:calc((100vh - 120px));overflow-y:auto;background:var(--creme);color:var(--tinta);border-radius:12px;padding:26px 26px 22px;font-size:15px;line-height:1.7}
+.player-texto-titulo{font-family:var(--serifa);font-weight:600;font-size:26px;color:var(--vinho);margin-bottom:12px}
+.player-texto p + p{margin-top:12px}
+.video-transcricao{position:absolute;z-index:2;left:10px;bottom:10px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--creme);color:var(--vinho);padding:4px 9px;border-radius:999px}
+html[lang="pt-BR"] .video-transcricao{display:none}
+@media (max-width:760px){
+  .player.com-texto{align-items:start;overflow-y:auto}
+  .player.com-texto .player-caixa{margin:48px 0 24px}
+  .player-corpo{flex-direction:column}
+  .player.com-texto .player-video{flex:none;width:min(320px, 100%);align-self:center}
+  .player-texto{max-height:none}
+}
+
 /* Logos das marcas dentro dos círculos */
 .marcas li.marca-logo{padding:11px;background:#fff;overflow:hidden}
 .marcas li.marca-logo img{width:100%;height:100%;object-fit:contain;display:block}
@@ -1028,8 +1046,13 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   <div class="player-fundo" data-fechar-player></div>
   <div class="player-caixa" role="dialog" aria-modal="true" aria-label="Vídeo">
     <button class="player-x" type="button" data-fechar-player aria-label="Fechar vídeo">×</button>
-    <div class="player-quadro" id="player-quadro"></div>
-    <a class="player-link" id="player-link" href="#" target="_blank" rel="noopener">Abrir no YouTube ↗</a>
+    <div class="player-corpo">
+      <div class="player-video">
+        <div class="player-quadro" id="player-quadro"></div>
+        <a class="player-link" id="player-link" href="#" target="_blank" rel="noopener">Abrir no YouTube ↗</a>
+      </div>
+      <div class="player-texto" id="player-texto" hidden></div>
+    </div>
   </div>
 </div>
 
@@ -1069,6 +1092,7 @@ a.video:hover .play::after{border-left-color:var(--creme)}
 <!-- Ligação com o banco de dados (vídeos, formulário e visitas) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/banco.js"></script>
+<script src="js/transcricoes.js?v=1"></script>
 <script>
 (function () {
   "use strict";
@@ -1301,7 +1325,9 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     var selo = v.destaque ? '<span class="video-destaque">' + esc(v.destaque) + "</span>" : "";
     var legenda = '<p class="video-legenda"><strong>' + esc(v.titulo || v.tipo || "") + "</strong>" +
       (v.marca ? "<span>" + esc(v.marca) + "</span>" : "") + "</p>";
-    var miolo = '<div class="video-capa">' + capa + tipo + selo + '<span class="play" aria-hidden="true"></span></div>' + legenda;
+    var temTexto = yt && window.TRANSCRICOES && window.TRANSCRICOES[yt];
+    var etiquetaTexto = temTexto ? '<span class="video-transcricao" aria-hidden="true">Transcrição</span>' : "";
+    var miolo = '<div class="video-capa">' + capa + tipo + selo + etiquetaTexto + '<span class="play" aria-hidden="true"></span></div>' + legenda;
     if (v.link) {
       return '<a class="video" href="' + esc(v.link) + '" target="_blank" rel="noopener"' + (yt ? ' data-youtube="' + yt + '"' : "") + ">" + miolo +
         '<span class="visualmente-oculto"> Assistir ao vídeo</span></a>';
@@ -1582,6 +1608,21 @@ a.video:hover .play::after{border-left-color:var(--creme)}
     playerFoco = document.activeElement;
     playerQuadro.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1" title="' + esc(titulo || "Vídeo") + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
     document.getElementById("player-link").href = "https://youtube.com/shorts/" + id;
+    // Transcrição ao lado do vídeo, no idioma em que o site está
+    var idiomaSite = (document.documentElement.lang || "pt").slice(0, 2);
+    var textos = (window.TRANSCRICOES || {})[id] || {};
+    var texto = textos[idiomaSite] || "";
+    var painel = document.getElementById("player-texto");
+    if (texto) {
+      painel.innerHTML = '<h2 class="player-texto-titulo">' + ({ en: "Transcript", es: "Transcripción" }[idiomaSite] || "Transcrição") + "</h2>" +
+        texto.split(/\n{2,}/).map(function (p) { return "<p>" + esc(p.trim()) + "</p>"; }).join("");
+      painel.hidden = false;
+      player.classList.add("com-texto");
+    } else {
+      painel.innerHTML = "";
+      painel.hidden = true;
+      player.classList.remove("com-texto");
+    }
     player.hidden = false;
     document.body.classList.add("travado");
     setTimeout(function () { player.querySelector(".player-x").focus(); }, 50);
@@ -1735,6 +1776,6 @@ a.video:hover .play::after{border-left-color:var(--creme)}
   registrarVisita();
 })();
 </script>
-<script src="js/idiomas.js?v=5"></script>
+<script src="js/idiomas.js?v=6"></script>
 </body>
 </html>
