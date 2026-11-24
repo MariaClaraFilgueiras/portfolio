@@ -406,7 +406,8 @@
     "Falar no WhatsApp": ["Chat on WhatsApp", "Hablar por WhatsApp"],
     "Mais formas de contato": ["More ways to reach me", "Más formas de contacto"],
     "Copywriter · São Paulo": ["Copywriter · São Paulo", "Copywriter · São Paulo"],
-    "← UGC": ["← UGC", "← UGC"]
+    "← UGC": ["← UGC", "← UGC"],
+    "Ler copy completa →": ["Read full copy →", "Leer copy completa →"]
   };
 
   // Textos que mudam com números ou nomes

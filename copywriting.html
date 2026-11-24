@@ -137,6 +137,7 @@ ul,ol{margin:0;padding:0;list-style:none}
 .peca strong{font-family:var(--serifa);font-size:22px;font-weight:700;line-height:1.15}
 .peca span:last-child{font-size:13px;color:rgba(246,239,230,.7)}
 .grupo-grade.videos .peca{min-height:320px}
+.peca[hidden]{display:none}
 
 /* Contato */
 .contato{background:var(--vinho);color:var(--creme);text-align:center}
@@ -164,6 +165,25 @@ ul,ol{margin:0;padding:0;list-style:none}
   .servicos-grade,.grupo-grade{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* Card de anúncio com a copy (abre a copy completa) */
+.copy-card{border:1px solid rgba(228,214,206,.35);border-radius:var(--raio);background:var(--creme);color:var(--tinta);min-height:320px}
+.copy-card button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:12px;width:100%;height:100%;padding:26px 24px}
+.copy-card button:focus-visible{outline:3px solid var(--creme);outline-offset:3px;border-radius:var(--raio)}
+.copy-card .peca-tipo{color:var(--vinho)}
+.copy-card strong{font-family:var(--serifa);font-size:24px;font-weight:700;line-height:1.15}
+.copy-trecho{font-family:var(--serifa);font-style:italic;font-size:19px;line-height:1.35;color:var(--tinta-suave);flex:1;display:-webkit-box;-webkit-line-clamp:8;-webkit-box-orient:vertical;overflow:hidden}
+.copy-ler{font-size:13px;font-weight:700;color:var(--vinho)}
+.copy-card button:hover .copy-ler{text-decoration:underline;text-underline-offset:4px}
+.copy-modal{border:0;border-radius:var(--raio);padding:0;width:min(680px, 100% - 32px);max-height:min(86vh, 900px);background:var(--creme-claro);color:var(--tinta)}
+.copy-modal::backdrop{background:rgba(26,9,5,.55)}
+.copy-modal-dentro{padding:40px 36px 36px;overflow-y:auto;max-height:min(86vh, 900px)}
+.copy-modal h2{font-family:var(--serifa);font-size:clamp(1.8rem, 4vw, 2.4rem);font-weight:700;line-height:1.1;margin-top:6px}
+.copy-modal .peca-tipo{color:var(--vinho)}
+.copy-texto{margin-top:20px;display:grid;gap:14px;font-size:15.5px;color:var(--tinta-suave)}
+.copy-fechar{position:sticky;float:right;top:0;margin:-24px -20px 0 0;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--vinho);background:var(--creme-claro);color:var(--vinho);font-size:22px;line-height:1;cursor:pointer}
+.copy-fechar:hover{background:var(--vinho);color:var(--creme)}
+@media (max-width:600px){.copy-modal-dentro{padding:32px 22px 26px}.copy-fechar{margin:-16px -8px 0 0}}
 </style>
 </head>
 <body>
@@ -279,10 +299,11 @@ ul,ol{margin:0;padding:0;list-style:none}
 
       <div class="grupo">
         <div class="grupo-topo">
-          <h3>Vídeos de anúncio</h3>
+          <h3>Criativos para anúncio</h3>
           <p>Roteiros de anúncios e vídeos de vendas que eu escrevi.</p>
         </div>
-        <ul class="grupo-grade videos">
+        <!-- Os anúncios de js/copies.js entram aqui, no lugar dos espaços "Em breve" -->
+        <ul class="grupo-grade videos" id="grade-anuncios">
           <li class="peca"><span class="peca-tipo">Vídeo</span><strong>Vídeo de anúncio</strong><span>Em breve</span></li>
           <li class="peca"><span class="peca-tipo">Vídeo</span><strong>Vídeo de vendas</strong><span>Em breve</span></li>
           <li class="peca"><span class="peca-tipo">Vídeo</span><strong>Vídeo de lançamento</strong><span>Em breve</span></li>
@@ -352,6 +373,74 @@ ul,ol{margin:0;padding:0;list-style:none}
     });
   });
 </script>
-<script src="js/idiomas.js?v=7"></script>
+<!-- Copy completa do anúncio -->
+<dialog class="copy-modal" id="copy-modal" aria-labelledby="copy-modal-titulo">
+  <div class="copy-modal-dentro">
+    <button type="button" class="copy-fechar" aria-label="Fechar">×</button>
+    <span class="peca-tipo" id="copy-modal-tipo"></span>
+    <h2 id="copy-modal-titulo"></h2>
+    <div class="copy-texto" id="copy-modal-texto"></div>
+  </div>
+</dialog>
+
+<script src="js/copies.js?v=1"></script>
+<script>
+  /* Cards dos anúncios: o texto aparece no idioma do site (PT, EN ou ES) */
+  (function () {
+    var copies = window.COPIES_ANUNCIO || [];
+    var grade = document.getElementById("grade-anuncios");
+    var modal = document.getElementById("copy-modal");
+    var aberto = -1;
+    function idioma() { return (document.documentElement.lang || "pt").slice(0, 2); }
+    function txt(o) { return typeof o === "string" ? o : (o[idioma()] || o.pt); }
+    function paragrafos(t) { return t.split(/\n{2,}/); }
+
+    function desenhar() {
+      grade.querySelectorAll(".copy-card").forEach(function (c) { c.remove(); });
+      // Cada anúncio ocupa o lugar de um espaço "Em breve"
+      grade.querySelectorAll(".peca").forEach(function (v, i) { v.hidden = i < copies.length; });
+      copies.forEach(function (c, i) {
+        var li = document.createElement("li");
+        li.className = "copy-card";
+        var b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("aria-haspopup", "dialog");
+        b.innerHTML = '<span class="peca-tipo"></span><strong></strong><span class="copy-trecho"></span><span class="copy-ler">Ler copy completa →</span>';
+        b.children[0].textContent = txt(c.tipo);
+        b.children[1].textContent = txt(c.titulo);
+        b.children[2].textContent = "“" + paragrafos(txt(c))[0] + "”";
+        b.addEventListener("click", function () { abrir(i); });
+        li.appendChild(b);
+        var restantes = grade.querySelectorAll(".copy-card");
+        if (restantes.length) restantes[restantes.length - 1].after(li); else grade.prepend(li);
+      });
+    }
+    function preencher(i) {
+      var c = copies[i];
+      document.getElementById("copy-modal-tipo").textContent = txt(c.tipo);
+      document.getElementById("copy-modal-titulo").textContent = txt(c.titulo);
+      var caixa = document.getElementById("copy-modal-texto");
+      caixa.innerHTML = "";
+      paragrafos(txt(c)).forEach(function (p) {
+        var el = document.createElement("p"); el.textContent = p.trim(); caixa.appendChild(el);
+      });
+    }
+    function abrir(i) {
+      aberto = i; preencher(i);
+      if (modal.showModal) modal.showModal(); else modal.setAttribute("open", "");
+    }
+    modal.querySelector(".copy-fechar").addEventListener("click", function () { modal.close(); });
+    modal.addEventListener("click", function (e) { if (e.target === modal) modal.close(); });
+    modal.addEventListener("close", function () { aberto = -1; });
+
+    desenhar();
+    // Quando troca o idioma, redesenha no idioma novo
+    new MutationObserver(function () {
+      desenhar();
+      if (aberto > -1) preencher(aberto);
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+  })();
+</script>
+<script src="js/idiomas.js?v=8"></script>
 </body>
 </html>
