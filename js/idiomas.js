@@ -380,7 +380,7 @@
     "Portfólio": ["Portfolio", "Portafolio"],
     "Trabalhos que eu já": ["Work I've", "Trabajos que ya"],
     "escrevi": ["written", "escribí"],
-    "Uma seleção de copies, anúncios em vídeo e funis de venda que eu criei para marcas e infoprodutores.": ["A selection of copy, video ads and sales funnels I've created for brands and digital product creators.", "Una selección de copies, anuncios en video y embudos de venta que creé para marcas e infoproductores."],
+    "Uma seleção de páginas, copies e roteiros de anúncio que eu criei para marcas e infoprodutores.": ["A selection of pages, copy and ad scripts I've created for brands and digital product creators.", "Una selección de páginas, copies y guiones de anuncio que creé para marcas e infoproductores."],
     "Copies": ["Copy", "Copies"],
     "Anúncios, publicações, cartas de venda, e-mails e páginas de venda.": ["Ads, posts, sales letters, emails and sales pages.", "Anuncios, publicaciones, cartas de venta, e-mails y páginas de venta."],
     "Anúncio": ["Ad", "Anuncio"],
