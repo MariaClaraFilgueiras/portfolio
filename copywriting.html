@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maria Clara Filgueiras | Portfólio de Copywriting</title>
+<meta name="description" content="Maria Clara Filgueiras, copywriter. Copy para anúncios, cartas e vídeos de vendas, lançamentos de infoprodutos, e-mails para funis e páginas de venda.">
+<meta name="theme-color" content="#521a1e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,700;1,800&display=swap" rel="stylesheet">
+<style>
+/* Mesma paleta e fontes do portfólio de UGC (index.html) */
+:root{
+  --creme:#f6efe6;
+  --creme-claro:#fbf8f3;
+  --verde:#2f4139;
+  --verde-medio:#5b7066;
+  --nude:#e4d6ce;
+  --vinho:#521a1e;
+  --vinho-claro:#6e2a2f;
+  --vinho-escuro:#43141a;
+  --tinta:#1a0905;
+  --tinta-suave:#4a3732;
+  --linha:rgba(82,26,30,.14);
+  --serifa:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --corpo:"Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --topo:72px;
+  --raio:18px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:var(--topo);-webkit-text-size-adjust:100%}
+body{margin:0;color:var(--tinta);font-family:var(--corpo);font-size:15px;line-height:1.7;overflow-x:hidden;background:var(--creme)}
+img{max-width:100%;display:block}
+a{color:inherit}
+h1,h2,h3{margin:0;font-weight:600}
+p{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+:focus-visible{outline:3px solid var(--vinho);outline-offset:3px;border-radius:4px}
+.fundo-escuro :focus-visible{outline-color:var(--creme)}
+.visualmente-oculto{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.container{width:min(1180px, 100% - 32px);margin-inline:auto}
+.pular{position:absolute;left:16px;top:-60px;z-index:200;background:var(--vinho);color:var(--creme);padding:10px 16px;font-weight:600;text-decoration:none;border-radius:8px}
+.pular:focus{top:12px}
+
+.titulo{font-family:var(--serifa);font-weight:700;font-size:clamp(2.4rem, 5.2vw, 4rem);line-height:1.02;letter-spacing:-.01em;color:var(--tinta)}
+.titulo em{font-style:italic;font-weight:600;color:var(--vinho)}
+.rotulo{display:inline-flex;align-items:center;gap:12px;font-size:11.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--vinho);margin-bottom:16px}
+.rotulo::before{content:"";width:34px;height:1.5px;background:currentColor}
+.intro{color:var(--tinta-suave);max-width:60ch;margin-top:16px}
+.fundo-escuro .titulo{color:var(--creme)}
+.fundo-escuro .titulo em{color:var(--nude)}
+.fundo-escuro .rotulo{color:var(--nude)}
+.fundo-escuro .intro{color:rgba(246,239,230,.84)}
+.secao{padding:96px 0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;padding:15px 26px;min-height:50px;text-decoration:none;border:1.5px solid transparent;border-radius:999px;transition:background .25s ease,color .25s ease,transform .25s ease}
+.btn:hover{transform:translateY(-2px)}
+.btn-vinho{background:var(--vinho);color:var(--creme)}
+.btn-vinho:hover{background:var(--vinho-claro)}
+.btn-creme{background:var(--creme);color:var(--vinho)}
+.btn-creme:hover{background:var(--nude)}
+.link-seta{font-size:14px;font-weight:600;color:var(--vinho);text-decoration:none;padding:12px 4px}
+.link-seta:hover{text-decoration:underline;text-underline-offset:4px}
+
+/* Menu fixo (igual ao do portfólio de UGC) */
+.topo{position:fixed;inset:0 0 auto;z-index:50;background:rgba(246,239,230,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--linha)}
+.nav-dentro{display:flex;align-items:center;justify-content:space-between;height:var(--topo);gap:16px}
+.nav-marca{font-family:var(--serifa);font-size:24px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta);text-decoration:none;white-space:nowrap}
+.nav-marca span{color:var(--vinho)}
+.nav-lista{display:flex;align-items:center;gap:28px}
+.nav-lista a{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--tinta-suave);padding:6px 0}
+.nav-lista a:hover{color:var(--vinho)}
+.nav-lista .nav-cta{background:var(--vinho);color:var(--creme);border-radius:999px;padding:11px 20px;letter-spacing:.04em;text-transform:none;font-size:13.5px}
+.nav-lista .nav-cta:hover{background:var(--vinho-claro);color:var(--creme)}
+.nav-lista .so-celular{display:none}
+.nav-botao{display:none;width:46px;height:46px;border:1.5px solid var(--vinho);border-radius:50%;background:transparent;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.nav-botao span{display:block;width:18px;height:1.5px;background:var(--vinho);transition:transform .25s ease,opacity .25s ease}
+.nav-botao[aria-expanded="true"] span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+.nav-botao[aria-expanded="true"] span:nth-child(2){opacity:0}
+.nav-botao[aria-expanded="true"] span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+@media (max-width:1000px){
+  .nav-botao{display:inline-flex}
+  .nav-lista{position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;background:var(--creme);border-bottom:1px solid var(--linha);padding:6px 16px 22px;display:none}
+  .nav-lista.aberta{display:flex}
+  .nav-lista a{display:block;padding:14px 4px;font-size:13px;border-bottom:1px solid var(--linha)}
+  .nav-lista .nav-cta{margin-top:16px;text-align:center;border-bottom:0}
+}
+
+/* Botão que troca de portfólio (UGC / Copywriting) e botões de idioma */
+.nav-extra{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.portfolio-troca{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--vinho);border-radius:999px;padding:0 14px;min-height:38px;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--vinho);white-space:nowrap;transition:background .2s ease,color .2s ease}
+.portfolio-troca:hover{background:var(--vinho);color:var(--creme)}
+.idiomas{display:flex;align-items:center;gap:2px;border:1.5px solid var(--vinho);border-radius:999px;padding:3px;flex-shrink:0}
+.idiomas button{border:0;background:transparent;color:var(--vinho);font:inherit;font-size:11.5px;font-weight:700;letter-spacing:.08em;padding:7px 10px;border-radius:999px;cursor:pointer;line-height:1;min-width:34px;min-height:30px}
+.idiomas button:hover{background:rgba(82,26,30,.08)}
+.idiomas button[aria-pressed="true"]{background:var(--vinho);color:var(--creme)}
+@media (min-width:1001px){.nav-lista{margin-left:auto}.nav-extra{margin-left:20px}}
+@media (max-width:1000px){.nav-extra{margin-left:auto;order:2}.nav-botao{order:3}}
+@media (max-width:560px){.portfolio-troca{display:none}.nav-lista .so-celular{display:block}}
+@media (max-width:440px){
+  .nav-dentro{gap:8px}
+  .nav-marca{font-size:19px;letter-spacing:.04em}
+  .idiomas{padding:2px}
+  .idiomas button{padding:6px 6px;min-width:28px;font-size:10.5px;letter-spacing:.04em}
+  .nav-botao{width:42px;height:42px}
+}
+
+/* Capa */
+.capa{padding:calc(var(--topo) + 88px) 0 96px;background:var(--creme)}
+.capa-grade{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+.capa h1{font-size:clamp(2.8rem, 6.4vw, 5rem)}
+.capa-frase{font-size:17px;color:var(--tinta-suave);max-width:52ch;margin-top:22px}
+.capa-botoes{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin-top:32px}
+.capa-cartao{background:var(--vinho);color:var(--creme);border-radius:var(--raio);padding:36px 32px;position:relative;overflow:hidden}
+.capa-cartao::before{content:"“";position:absolute;right:18px;top:-34px;font-family:var(--serifa);font-size:200px;line-height:1;color:rgba(228,214,206,.16)}
+.capa-cartao p{position:relative;font-family:var(--serifa);font-style:italic;font-size:clamp(1.5rem, 2.6vw, 2rem);line-height:1.2}
+.capa-cartao small{display:block;margin-top:18px;font-family:var(--corpo);font-style:normal;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--nude)}
+
+/* Serviços */
+.servicos{background:var(--nude)}
+.servicos-grade{display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;margin-top:48px}
+.servico{background:var(--creme-claro);border:1px solid var(--linha);border-radius:var(--raio);padding:30px 26px}
+.servico-num{font-family:var(--serifa);font-style:italic;font-weight:700;font-size:34px;line-height:1;color:var(--vinho)}
+.servico h3{font-family:var(--serifa);font-size:24px;font-weight:700;line-height:1.15;margin-top:14px}
+.servico p{color:var(--tinta-suave);font-size:14px;margin-top:10px}
+
+/* Trabalhos: copies, vídeos de anúncio e funis */
+.trabalhos{background:var(--verde);color:var(--creme)}
+.grupo{margin-top:56px}
+.grupo-topo{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;border-bottom:1px solid rgba(246,239,230,.2);padding-bottom:14px}
+.grupo-topo h3{font-family:var(--serifa);font-size:clamp(1.8rem, 3vw, 2.3rem);font-weight:700}
+.grupo-topo p{font-size:13.5px;color:rgba(246,239,230,.75);max-width:52ch}
+.grupo-grade{display:grid;grid-template-columns:repeat(3, 1fr);gap:18px;margin-top:24px}
+.peca{border:1.5px dashed rgba(228,214,206,.45);border-radius:var(--raio);min-height:200px;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;background:rgba(246,239,230,.04)}
+.peca-tipo{font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--nude)}
+.peca strong{font-family:var(--serifa);font-size:22px;font-weight:700;line-height:1.15}
+.peca span:last-child{font-size:13px;color:rgba(246,239,230,.7)}
+.grupo-grade.videos .peca{min-height:320px}
+
+/* Contato */
+.contato{background:var(--vinho);color:var(--creme);text-align:center}
+.contato .intro{margin-inline:auto}
+.contato-botoes{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:32px}
+.btn-contorno-claro{border-color:var(--creme);color:var(--creme)}
+.btn-contorno-claro:hover{background:var(--creme);color:var(--vinho)}
+
+/* Rodapé */
+.rodape{background:var(--vinho-escuro);color:var(--creme);padding:40px 0 32px;border-top:1px solid rgba(246,239,230,.15)}
+.rodape-grade{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:20px}
+.rodape-nome{font-family:var(--serifa);font-weight:700;font-size:24px;letter-spacing:.06em;text-transform:uppercase}
+.rodape-frase{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.7;margin-top:4px}
+.redes{display:flex;flex-wrap:wrap;gap:22px;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.redes a{text-decoration:none;opacity:.85}
+.redes a:hover{opacity:1;text-decoration:underline;text-underline-offset:4px}
+
+@media (max-width:900px){
+  .capa-grade{grid-template-columns:1fr;gap:40px}
+  .servicos-grade,.grupo-grade{grid-template-columns:repeat(2, 1fr)}
+}
+@media (max-width:600px){
+  .secao{padding:72px 0}
+  .capa{padding:calc(var(--topo) + 48px) 0 72px}
+  .servicos-grade,.grupo-grade{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="topo">
+  <nav class="container nav-dentro" aria-label="Menu principal">
+    <a href="#inicio" class="nav-marca">Maria Clara<span>.</span></a>
+    <button class="nav-botao" type="button" aria-expanded="false" aria-controls="nav-lista" aria-label="Abrir menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-lista" id="nav-lista">
+      <li><a href="#servicos">Serviços</a></li>
+      <li><a href="#trabalhos">Trabalhos</a></li>
+      <li class="so-celular"><a href="index.html">Portfólio UGC</a></li>
+      <li><a href="#contato" class="nav-cta">Trabalhe comigo</a></li>
+    </ul>
+    <div class="nav-extra">
+      <!-- Volta para o portfólio de UGC -->
+      <a class="portfolio-troca" href="index.html">← UGC</a>
+      <!-- Troca de idioma: as traduções ficam em js/idiomas.js -->
+      <div class="idiomas" role="group" aria-label="Idioma / Language / Idioma">
+        <button type="button" data-idioma="pt" aria-pressed="true" lang="pt-BR" title="Português">PT</button>
+        <button type="button" data-idioma="en" aria-pressed="false" lang="en" title="English">EN</button>
+        <button type="button" data-idioma="es" aria-pressed="false" lang="es" title="Español">ES</button>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main id="conteudo">
+
+  <!-- ============ CAPA ============ -->
+  <section class="capa" id="inicio" aria-labelledby="capa-titulo">
+    <div class="container capa-grade">
+      <div>
+        <p class="rotulo">Copywriting</p>
+        <h1 class="titulo" id="capa-titulo">Palavras que <em>vendem</em></h1>
+        <p class="capa-frase">Escrevo copies para anúncios, cartas e vídeos de vendas, lançamentos de infoprodutos, e-mails e páginas de venda. Textos que conversam com o cliente certo e o levam até a compra.</p>
+        <div class="capa-botoes">
+          <a class="btn btn-vinho" href="#contato">Quero uma copy</a>
+          <a class="link-seta" href="#trabalhos">Ver trabalhos →</a>
+        </div>
+      </div>
+      <div class="capa-cartao">
+        <p>Do primeiro anúncio ao último e-mail do funil, cada palavra tem um trabalho a fazer.</p>
+        <small>Maria Clara Filgueiras · Copywriter</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVIÇOS ============ -->
+  <section class="secao servicos" id="servicos" aria-labelledby="servicos-titulo">
+    <div class="container">
+      <p class="rotulo">O que eu faço</p>
+      <h2 class="titulo" id="servicos-titulo">Copy em cada <em>etapa</em> da venda</h2>
+      <ul class="servicos-grade">
+        <li class="servico">
+          <span class="servico-num">01</span>
+          <h3>Anúncios e publicações online</h3>
+          <p>Copy para anúncios e posts que param a rolagem e levam ao clique.</p>
+        </li>
+        <li class="servico">
+          <span class="servico-num">02</span>
+          <h3>Cartas e vídeos de vendas</h3>
+          <p>Cartas de venda e roteiros de VSL que conduzem a pessoa até a decisão de compra.</p>
+        </li>
+        <li class="servico">
+          <span class="servico-num">03</span>
+          <h3>Lançamentos de infoprodutos</h3>
+          <p>Textos para todas as fases do lançamento, do aquecimento à abertura do carrinho.</p>
+        </li>
+        <li class="servico">
+          <span class="servico-num">04</span>
+          <h3>Supervisão de campanhas</h3>
+          <p>Acompanhamento da campanha inteira, da produção até a conclusão.</p>
+        </li>
+        <li class="servico">
+          <span class="servico-num">05</span>
+          <h3>E-mails para funis de venda</h3>
+          <p>Criação e escrita de sequências de e-mail que nutrem, aquecem e convertem.</p>
+        </li>
+        <li class="servico">
+          <span class="servico-num">06</span>
+          <h3>Páginas de venda e landing pages</h3>
+          <p>Copy para páginas de venda, captura e outras landing pages.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ TRABALHOS ============
+       Os espaços tracejados são para os trabalhos reais.
+       Me mande as copies, os vídeos e os funis que eu troco cada espaço pelo trabalho. -->
+  <section class="secao trabalhos fundo-escuro" id="trabalhos" aria-labelledby="trabalhos-titulo">
+    <div class="container">
+      <p class="rotulo">Portfólio</p>
+      <h2 class="titulo" id="trabalhos-titulo">Trabalhos que eu já <em>escrevi</em></h2>
+      <p class="intro">Uma seleção de copies, anúncios em vídeo e funis de venda que eu criei para marcas e infoprodutores.</p>
+
+      <div class="grupo">
+        <div class="grupo-topo">
+          <h3>Copies</h3>
+          <p>Anúncios, publicações, cartas de venda, e-mails e páginas de venda.</p>
+        </div>
+        <ul class="grupo-grade">
+          <li class="peca"><span class="peca-tipo">Anúncio</span><strong>Copy de anúncio</strong><span>Em breve</span></li>
+          <li class="peca"><span class="peca-tipo">Carta de vendas</span><strong>Carta de vendas</strong><span>Em breve</span></li>
+          <li class="peca"><span class="peca-tipo">Página de vendas</span><strong>Página de vendas</strong><span>Em breve</span></li>
+        </ul>
+      </div>
+
+      <div class="grupo">
+        <div class="grupo-topo">
+          <h3>Vídeos de anúncio</h3>
+          <p>Roteiros de anúncios e vídeos de vendas que eu escrevi.</p>
+        </div>
+        <ul class="grupo-grade videos">
+          <li class="peca"><span class="peca-tipo">Vídeo</span><strong>Vídeo de anúncio</strong><span>Em breve</span></li>
+          <li class="peca"><span class="peca-tipo">Vídeo</span><strong>Vídeo de vendas</strong><span>Em breve</span></li>
+          <li class="peca"><span class="peca-tipo">Vídeo</span><strong>Vídeo de lançamento</strong><span>Em breve</span></li>
+        </ul>
+      </div>
+
+      <div class="grupo">
+        <div class="grupo-topo">
+          <h3>Funis de venda</h3>
+          <p>Funis completos, com anúncios, páginas e sequências de e-mail.</p>
+        </div>
+        <ul class="grupo-grade">
+          <li class="peca"><span class="peca-tipo">Funil</span><strong>Funil de lançamento</strong><span>Em breve</span></li>
+          <li class="peca"><span class="peca-tipo">Funil</span><strong>Funil perpétuo</strong><span>Em breve</span></li>
+          <li class="peca"><span class="peca-tipo">E-mail</span><strong>Sequência de e-mails</strong><span>Em breve</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTATO ============ -->
+  <section class="secao contato fundo-escuro" id="contato" aria-labelledby="contato-titulo">
+    <div class="container">
+      <p class="rotulo">Contato</p>
+      <h2 class="titulo" id="contato-titulo">Vamos escrever a sua <em>próxima</em> venda?</h2>
+      <p class="intro">Me conta sobre o seu produto e o que você quer alcançar. Respondo em até 1 dia útil.</p>
+      <div class="contato-botoes">
+        <a class="btn btn-creme" href="https://wa.me/5511925239294?text=Oi%20Maria%20Clara!%20Vim%20pelo%20seu%20portf%C3%B3lio%20de%20copywriting%20e%20quero%20conversar%20sobre%20uma%20copy." target="_blank" rel="noopener">Falar no WhatsApp</a>
+        <a class="btn btn-contorno-claro" href="https://www.instagram.com/mariaclarafilgueiras/" target="_blank" rel="noopener">Instagram</a>
+        <a class="btn btn-contorno-claro" href="index.html#contato">Mais formas de contato</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="rodape fundo-escuro">
+  <div class="container rodape-grade">
+    <div>
+      <p class="rodape-nome">Maria Clara.</p>
+      <p class="rodape-frase">Copywriter · São Paulo</p>
+    </div>
+    <ul class="redes" aria-label="Minhas redes">
+      <li><a href="index.html">Portfólio UGC</a></li>
+      <li><a href="https://www.instagram.com/mariaclarafilgueiras/" target="_blank" rel="noopener">Instagram</a></li>
+      <li><a href="https://wa.me/5511925239294" target="_blank" rel="noopener">WhatsApp</a></li>
+      <li>© <span id="ano">2026</span></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("ano").textContent = new Date().getFullYear();
+  var botaoMenu = document.querySelector(".nav-botao"), listaMenu = document.getElementById("nav-lista");
+  botaoMenu.addEventListener("click", function () {
+    var aberto = listaMenu.classList.toggle("aberta");
+    botaoMenu.setAttribute("aria-expanded", String(aberto));
+  });
+  listaMenu.addEventListener("click", function (e) {
+    if (e.target.closest("a")) { listaMenu.classList.remove("aberta"); botaoMenu.setAttribute("aria-expanded", "false"); }
+  });
+  // Mantém o idioma escolhido ao trocar de portfólio
+  document.querySelectorAll('a[href^="index.html"]').forEach(function (a) {
+    a.addEventListener("click", function () {
+      var l = (document.documentElement.lang || "pt").slice(0, 2);
+      if (l !== "pt") a.href = a.getAttribute("href").replace("index.html", "index.html?lang=" + l);
+    });
+  });
+</script>
+<script src="js/idiomas.js?v=7"></script>
+</body>
+</html>

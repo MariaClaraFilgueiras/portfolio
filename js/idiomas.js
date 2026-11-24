@@ -343,7 +343,70 @@
     "Manchete do E-commerce Brasil: Os benefícios de ter clientes como embaixadores de marca através do UGC": ["E-commerce Brasil headline: The benefits of having customers as brand ambassadors through UGC", "Titular de E-commerce Brasil: los beneficios de tener clientes como embajadores de marca a través del UGC"],
 
     // Título da aba
-    "Maria Clara Filgueiras | Portfólio UGC Creator": ["Maria Clara Filgueiras | UGC Creator Portfolio", "Maria Clara Filgueiras | Portafolio UGC Creator"]
+    "Maria Clara Filgueiras | Portfólio UGC Creator": ["Maria Clara Filgueiras | UGC Creator Portfolio", "Maria Clara Filgueiras | Portafolio UGC Creator"],
+    "Maria Clara Filgueiras | Portfólio de Copywriting": ["Maria Clara Filgueiras | Copywriting Portfolio", "Maria Clara Filgueiras | Portafolio de Copywriting"],
+
+    // Página de copywriting (copywriting.html)
+    "Copywriting": ["Copywriting", "Copywriting"],
+    "Portfólio UGC": ["UGC portfolio", "Portafolio UGC"],
+    "Serviços": ["Services", "Servicios"],
+    "Palavras que": ["Words that", "Palabras que"],
+    "vendem": ["sell", "venden"],
+    "Escrevo copies para anúncios, cartas e vídeos de vendas, lançamentos de infoprodutos, e-mails e páginas de venda. Textos que conversam com o cliente certo e o levam até a compra.": [
+      "I write copy for ads, sales letters and sales videos, digital product launches, emails and sales pages. Words that speak to the right customer and lead them all the way to the purchase.",
+      "Escribo copies para anuncios, cartas y videos de ventas, lanzamientos de infoproductos, e-mails y páginas de venta. Textos que hablan con el cliente correcto y lo llevan hasta la compra."],
+    "Quero uma copy": ["I want copy", "Quiero una copy"],
+    "Ver trabalhos →": ["See my work →", "Ver trabajos →"],
+    "Do primeiro anúncio ao último e-mail do funil, cada palavra tem um trabalho a fazer.": [
+      "From the first ad to the last email in the funnel, every word has a job to do.",
+      "Del primer anuncio al último e-mail del embudo, cada palabra tiene un trabajo que hacer."],
+    "Maria Clara Filgueiras · Copywriter": ["Maria Clara Filgueiras · Copywriter", "Maria Clara Filgueiras · Copywriter"],
+    "O que eu faço": ["What I do", "Lo que hago"],
+    "Copy em cada": ["Copy for every", "Copy en cada"],
+    "etapa": ["stage", "etapa"],
+    "da venda": ["of the sale", "de la venta"],
+    "Anúncios e publicações online": ["Ads and online posts", "Anuncios y publicaciones online"],
+    "Copy para anúncios e posts que param a rolagem e levam ao clique.": ["Copy for ads and posts that stop the scroll and drive the click.", "Copy para anuncios y posts que detienen el scroll y llevan al clic."],
+    "Cartas e vídeos de vendas": ["Sales letters and sales videos", "Cartas y videos de ventas"],
+    "Cartas de venda e roteiros de VSL que conduzem a pessoa até a decisão de compra.": ["Sales letters and VSL scripts that guide people to the buying decision.", "Cartas de venta y guiones de VSL que llevan a la persona hasta la decisión de compra."],
+    "Lançamentos de infoprodutos": ["Digital product launches", "Lanzamientos de infoproductos"],
+    "Textos para todas as fases do lançamento, do aquecimento à abertura do carrinho.": ["Copy for every phase of the launch, from warm-up to cart open.", "Textos para todas las fases del lanzamiento, del calentamiento a la apertura del carrito."],
+    "Supervisão de campanhas": ["Campaign supervision", "Supervisión de campañas"],
+    "Acompanhamento da campanha inteira, da produção até a conclusão.": ["Overseeing the whole campaign, from production to wrap-up.", "Acompañamiento de toda la campaña, desde la producción hasta el cierre."],
+    "E-mails para funis de venda": ["Emails for sales funnels", "E-mails para embudos de venta"],
+    "Criação e escrita de sequências de e-mail que nutrem, aquecem e convertem.": ["Planning and writing email sequences that nurture, warm up and convert.", "Creación y redacción de secuencias de e-mail que nutren, calientan y convierten."],
+    "Páginas de venda e landing pages": ["Sales pages and landing pages", "Páginas de venta y landing pages"],
+    "Copy para páginas de venda, captura e outras landing pages.": ["Copy for sales pages, opt-in pages and other landing pages.", "Copy para páginas de venta, de captura y otras landing pages."],
+    "Portfólio": ["Portfolio", "Portafolio"],
+    "Trabalhos que eu já": ["Work I've", "Trabajos que ya"],
+    "escrevi": ["written", "escribí"],
+    "Uma seleção de copies, anúncios em vídeo e funis de venda que eu criei para marcas e infoprodutores.": ["A selection of copy, video ads and sales funnels I've created for brands and digital product creators.", "Una selección de copies, anuncios en video y embudos de venta que creé para marcas e infoproductores."],
+    "Copies": ["Copy", "Copies"],
+    "Anúncios, publicações, cartas de venda, e-mails e páginas de venda.": ["Ads, posts, sales letters, emails and sales pages.", "Anuncios, publicaciones, cartas de venta, e-mails y páginas de venta."],
+    "Anúncio": ["Ad", "Anuncio"],
+    "Copy de anúncio": ["Ad copy", "Copy de anuncio"],
+    "Carta de vendas": ["Sales letter", "Carta de ventas"],
+    "Página de vendas": ["Sales page", "Página de ventas"],
+    "Em breve": ["Coming soon", "Próximamente"],
+    "Vídeos de anúncio": ["Video ads", "Videos de anuncio"],
+    "Roteiros de anúncios e vídeos de vendas que eu escrevi.": ["Ad scripts and sales videos I've written.", "Guiones de anuncios y videos de ventas que escribí."],
+    "Vídeo de anúncio": ["Video ad", "Video de anuncio"],
+    "Vídeo de vendas": ["Sales video", "Video de ventas"],
+    "Vídeo de lançamento": ["Launch video", "Video de lanzamiento"],
+    "Funis de venda": ["Sales funnels", "Embudos de venta"],
+    "Funis completos, com anúncios, páginas e sequências de e-mail.": ["Complete funnels, with ads, pages and email sequences.", "Embudos completos, con anuncios, páginas y secuencias de e-mail."],
+    "Funil": ["Funnel", "Embudo"],
+    "Funil de lançamento": ["Launch funnel", "Embudo de lanzamiento"],
+    "Funil perpétuo": ["Evergreen funnel", "Embudo perpetuo"],
+    "Sequência de e-mails": ["Email sequence", "Secuencia de e-mails"],
+    "Vamos escrever a sua": ["Shall we write your", "¿Escribimos tu"],
+    "próxima": ["next", "próxima"],
+    "venda?": ["sale?", "venta?"],
+    "Me conta sobre o seu produto e o que você quer alcançar. Respondo em até 1 dia útil.": ["Tell me about your product and what you want to achieve. I reply within 1 business day.", "Cuéntame sobre tu producto y lo que quieres lograr. Respondo en hasta 1 día hábil."],
+    "Falar no WhatsApp": ["Chat on WhatsApp", "Hablar por WhatsApp"],
+    "Mais formas de contato": ["More ways to reach me", "Más formas de contacto"],
+    "Copywriter · São Paulo": ["Copywriter · São Paulo", "Copywriter · São Paulo"],
+    "← UGC": ["← UGC", "← UGC"]
   };
 
   // Textos que mudam com números ou nomes
@@ -363,6 +426,7 @@
   var idioma = "pt";
   var originais = new WeakMap();   // texto original de cada pedaço de texto
   var aplicando = false;
+  var tituloOriginal = document.title; // cada página tem o seu título
 
   function limpar(t) { return t.replace(/\s+/g, " ").trim(); }
 
@@ -426,8 +490,8 @@
     aplicando = true;
     document.documentElement.lang = novo === "pt" ? "pt-BR" : novo;
     percorrer(document.body);
-    var tituloPt = "Maria Clara Filgueiras | Portfólio UGC Creator";
-    document.title = novo === "pt" ? tituloPt : T[tituloPt][novo === "en" ? 0 : 1];
+    var tituloPt = tituloOriginal;
+    if (T[tituloPt]) document.title = novo === "pt" ? tituloPt : T[tituloPt][novo === "en" ? 0 : 1];
     document.querySelectorAll(".idiomas button").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.getAttribute("data-idioma") === novo));
     });
