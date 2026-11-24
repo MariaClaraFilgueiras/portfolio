@@ -407,7 +407,8 @@
     "Mais formas de contato": ["More ways to reach me", "Más formas de contacto"],
     "Copywriter · São Paulo": ["Copywriter · São Paulo", "Copywriter · São Paulo"],
     "← UGC": ["← UGC", "← UGC"],
-    "Ler copy completa →": ["Read full copy →", "Leer copy completa →"]
+    "Ler copy completa →": ["Read full copy →", "Leer copy completa →"],
+    "Ver a página no ar →": ["See the live page →", "Ver la página publicada →"]
   };
 
   // Textos que mudam com números ou nomes

@@ -181,6 +181,8 @@ ul,ol{margin:0;padding:0;list-style:none}
 .copy-modal h2{font-family:var(--serifa);font-size:clamp(1.8rem, 4vw, 2.4rem);font-weight:700;line-height:1.1;margin-top:6px}
 .copy-modal .peca-tipo{color:var(--vinho)}
 .copy-texto{margin-top:20px;display:grid;gap:14px;font-size:15.5px;color:var(--tinta-suave)}
+.copy-texto h3{font-family:var(--serifa);font-size:22px;font-weight:700;line-height:1.2;color:var(--vinho);margin-top:12px}
+.copy-link{justify-self:start;margin-top:10px;font-size:14px;font-weight:700;color:var(--vinho)}
 .copy-fechar{position:sticky;float:right;top:0;margin:-24px -20px 0 0;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--vinho);background:var(--creme-claro);color:var(--vinho);font-size:22px;line-height:1;cursor:pointer}
 .copy-fechar:hover{background:var(--vinho);color:var(--creme)}
 @media (max-width:600px){.copy-modal-dentro{padding:32px 22px 26px}.copy-fechar{margin:-16px -8px 0 0}}
@@ -290,7 +292,8 @@ ul,ol{margin:0;padding:0;list-style:none}
           <h3>Copies</h3>
           <p>Anúncios, publicações, cartas de venda, e-mails e páginas de venda.</p>
         </div>
-        <ul class="grupo-grade">
+        <!-- As copies de js/copies.js com grade: "copies" entram aqui -->
+        <ul class="grupo-grade" id="grade-copies">
           <li class="peca"><span class="peca-tipo">Anúncio</span><strong>Copy de anúncio</strong><span>Em breve</span></li>
           <li class="peca"><span class="peca-tipo">Carta de vendas</span><strong>Carta de vendas</strong><span>Em breve</span></li>
           <li class="peca"><span class="peca-tipo">Página de vendas</span><strong>Página de vendas</strong><span>Em breve</span></li>
@@ -383,23 +386,30 @@ ul,ol{margin:0;padding:0;list-style:none}
   </div>
 </dialog>
 
-<script src="js/copies.js?v=7"></script>
+<script src="js/copies.js?v=9"></script>
 <script>
   /* Cards dos anúncios: o texto aparece no idioma do site (PT, EN ou ES) */
   (function () {
     var copies = window.COPIES_ANUNCIO || [];
-    var grade = document.getElementById("grade-anuncios");
+    // Cada copy vai para a grade indicada em "grade" (padrão: anúncios)
+    var grades = { anuncios: document.getElementById("grade-anuncios"), copies: document.getElementById("grade-copies") };
     var modal = document.getElementById("copy-modal");
     var aberto = -1;
     function idioma() { return (document.documentElement.lang || "pt").slice(0, 2); }
     function txt(o) { return typeof o === "string" ? o : (o[idioma()] || o.pt); }
     function paragrafos(t) { return t.split(/\n{2,}/); }
 
+    function ehTitulo(p) { return /^## /.test(p); }
     function desenhar() {
-      grade.querySelectorAll(".copy-card").forEach(function (c) { c.remove(); });
-      // Cada anúncio ocupa o lugar de um espaço "Em breve"
-      grade.querySelectorAll(".peca").forEach(function (v, i) { v.hidden = i < copies.length; });
+      Object.keys(grades).forEach(function (nome) {
+        var grade = grades[nome];
+        var daGrade = copies.filter(function (c) { return (c.grade || "anuncios") === nome; });
+        grade.querySelectorAll(".copy-card").forEach(function (c) { c.remove(); });
+        // Cada copy ocupa o lugar de um espaço "Em breve"
+        grade.querySelectorAll(".peca").forEach(function (v, i) { v.hidden = i < daGrade.length; });
+      });
       copies.forEach(function (c, i) {
+        var grade = grades[c.grade || "anuncios"];
         var li = document.createElement("li");
         li.className = "copy-card";
         var b = document.createElement("button");
@@ -408,7 +418,7 @@ ul,ol{margin:0;padding:0;list-style:none}
         b.innerHTML = '<span class="peca-tipo"></span><strong></strong><span class="copy-trecho"></span><span class="copy-ler">Ler copy completa →</span>';
         b.children[0].textContent = txt(c.tipo);
         b.children[1].textContent = txt(c.titulo);
-        b.children[2].textContent = "“" + paragrafos(txt(c))[0] + "”";
+        b.children[2].textContent = "“" + (c.trecho ? txt(c.trecho) : paragrafos(txt(c)).filter(function (p) { return !ehTitulo(p); })[0]) + "”";
         b.addEventListener("click", function () { abrir(i); });
         li.appendChild(b);
         var restantes = grade.querySelectorAll(".copy-card");
@@ -422,8 +432,15 @@ ul,ol{margin:0;padding:0;list-style:none}
       var caixa = document.getElementById("copy-modal-texto");
       caixa.innerHTML = "";
       paragrafos(txt(c)).forEach(function (p) {
-        var el = document.createElement("p"); el.textContent = p.trim(); caixa.appendChild(el);
+        var el = document.createElement(ehTitulo(p) ? "h3" : "p");
+        el.textContent = p.replace(/^## /, "").trim(); caixa.appendChild(el);
       });
+      if (c.link) {
+        var a = document.createElement("a");
+        a.className = "copy-link"; a.href = c.link; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "Ver a página no ar →";
+        caixa.appendChild(a);
+      }
     }
     function abrir(i) {
       aberto = i; preencher(i);
@@ -441,6 +458,6 @@ ul,ol{margin:0;padding:0;list-style:none}
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
   })();
 </script>
-<script src="js/idiomas.js?v=8"></script>
+<script src="js/idiomas.js?v=9"></script>
 </body>
 </html>
