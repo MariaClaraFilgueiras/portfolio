@@ -294,9 +294,9 @@ ul,ol{margin:0;padding:0;list-style:none}
         </div>
         <!-- As copies de js/copies.js com grade: "copies" entram aqui -->
         <ul class="grupo-grade" id="grade-copies">
-          <li class="peca"><span class="peca-tipo">Anúncio</span><strong>Copy de anúncio</strong><span>Em breve</span></li>
-          <li class="peca"><span class="peca-tipo">Carta de vendas</span><strong>Carta de vendas</strong><span>Em breve</span></li>
-          <li class="peca"><span class="peca-tipo">Página de vendas</span><strong>Página de vendas</strong><span>Em breve</span></li>
+          <li class="peca" data-vaga="anuncio"><span class="peca-tipo">Anúncio</span><strong>Copy de anúncio</strong><span>Em breve</span></li>
+          <li class="peca" data-vaga="carta"><span class="peca-tipo">Carta de vendas</span><strong>Carta de vendas</strong><span>Em breve</span></li>
+          <li class="peca" data-vaga="pagina"><span class="peca-tipo">Página de vendas</span><strong>Página de vendas</strong><span>Em breve</span></li>
         </ul>
       </div>
 
@@ -386,7 +386,7 @@ ul,ol{margin:0;padding:0;list-style:none}
   </div>
 </dialog>
 
-<script src="js/copies.js?v=9"></script>
+<script src="js/copies.js?v=10"></script>
 <script>
   /* Cards dos anúncios: o texto aparece no idioma do site (PT, EN ou ES) */
   (function () {
@@ -403,10 +403,8 @@ ul,ol{margin:0;padding:0;list-style:none}
     function desenhar() {
       Object.keys(grades).forEach(function (nome) {
         var grade = grades[nome];
-        var daGrade = copies.filter(function (c) { return (c.grade || "anuncios") === nome; });
         grade.querySelectorAll(".copy-card").forEach(function (c) { c.remove(); });
-        // Cada copy ocupa o lugar de um espaço "Em breve"
-        grade.querySelectorAll(".peca").forEach(function (v, i) { v.hidden = i < daGrade.length; });
+        grade.querySelectorAll(".peca").forEach(function (v) { v.hidden = false; });
       });
       copies.forEach(function (c, i) {
         var grade = grades[c.grade || "anuncios"];
@@ -421,8 +419,9 @@ ul,ol{margin:0;padding:0;list-style:none}
         b.children[2].textContent = "“" + (c.trecho ? txt(c.trecho) : paragrafos(txt(c)).filter(function (p) { return !ehTitulo(p); })[0]) + "”";
         b.addEventListener("click", function () { abrir(i); });
         li.appendChild(b);
-        var restantes = grade.querySelectorAll(".copy-card");
-        if (restantes.length) restantes[restantes.length - 1].after(li); else grade.prepend(li);
+        // Cada copy ocupa o lugar de um espaço "Em breve": o indicado em "vaga" ou o primeiro livre
+        var alvo = grade.querySelector(c.vaga ? '.peca[data-vaga="' + c.vaga + '"]:not([hidden])' : ".peca:not([hidden])");
+        if (alvo) { alvo.hidden = true; alvo.before(li); } else grade.appendChild(li);
       });
     }
     function preencher(i) {
