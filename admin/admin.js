@@ -3883,7 +3883,9 @@
       corpo +
       '<div class="legenda">' + CATEGORIAS_AG.map(function (c) { return '<span><i class="ag-' + c[0] + '"></i>' + c[1] + "</span>"; }).join("") +
         '<span><i class="ag-do-cal"></i>Vem do Calendário (gravar, postar, prazos e roteiros)</span>' +
-        '<span>' + icone("repetir", "ag-icone-legenda") + "Repete toda semana</span></div>";
+        '<span>' + icone("repetir", "ag-icone-legenda") + "Repete toda semana</span>" +
+        (modo !== "mes" ? '<span class="ag-dica">Para mudar de dia ou de horário, arraste o compromisso' + (window.matchMedia("(pointer: coarse)").matches ? " (segure o dedo em cima dele e arraste)" : "") + ".</span>" : "") +
+      "</div>";
 
     $(".ag-modos", painel).addEventListener("click", function (e) {
       var b = e.target.closest("[data-modo]"); if (!b) return;
@@ -3902,6 +3904,7 @@
     $("#ag-rotina").addEventListener("click", janelaRotinaFixa);
 
     painel.querySelector(".ag-caixa").addEventListener("click", function (e) {
+      if (acabouDeArrastar) return;
       var item = e.target.closest(".cal-item");
       if (item) { abrirItemCal(item.getAttribute("data-fonte"), item.getAttribute("data-id")); return; }
       var cab = e.target.closest("[data-ir-dia]");
@@ -3916,6 +3919,8 @@
         formularioAgenda(null, { data: col.getAttribute("data-data"), hora: hora });
       }
     });
+
+    ligarArrastoAg(painel);
 
     var agora = painel.querySelector(".ag-agora");
     if (agora && modo !== "mes") {
@@ -3982,6 +3987,145 @@
     return '<div class="cal-caixa ag-caixa">' +
       '<div class="cal-semana" aria-hidden="true">' + CURTO_AG.map(function (c) { return "<span>" + c + "</span>"; }).join("") + "</div>" +
       '<div class="cal-grade">' + celulas + "</div></div>";
+  }
+
+  /* Arrastar um compromisso para outro dia ou horário, como no Google Agenda.
+     No computador: clica, segura e arrasta. No celular: segura o dedo um instante e arrasta. */
+  var arrastoAg = null, acabouDeArrastar = false;
+
+  function ligarArrastoAg(painel) {
+    var caixa = painel.querySelector(".ag-caixa");
+    if (!caixa || !caixa.querySelector(".ag-col")) return;
+    caixa.addEventListener("pointerdown", function (e) {
+      var bloco = e.target.closest(".ag-bloco");
+      if (!bloco || e.button !== 0) return;
+      var a = acharPorId(dados.agenda, bloco.getAttribute("data-id"));
+      if (!a) return;
+      var r = bloco.getBoundingClientRect();
+      arrastoAg = {
+        a: a, bloco: bloco, origem: bloco.getAttribute("data-data"), id: e.pointerId,
+        x: e.clientX, y: e.clientY, pegaY: e.clientY - r.top, dur: numero(a.hora_fim) - numero(a.hora_inicio),
+        toque: e.pointerType !== "mouse", ativo: false, alvo: null, timer: null
+      };
+      if (arrastoAg.toque) arrastoAg.timer = setTimeout(function () { if (arrastoAg && !arrastoAg.ativo) comecarArrastoAg(); }, 350);
+    });
+    caixa.addEventListener("contextmenu", function (e) { if (e.target.closest(".ag-bloco")) e.preventDefault(); });
+    // No celular, enquanto arrasta, a página não rola
+    caixa.addEventListener("touchmove", function (e) { if (arrastoAg && arrastoAg.ativo) e.preventDefault(); }, { passive: false });
+  }
+
+  function comecarArrastoAg() {
+    var g = arrastoAg;
+    g.ativo = true;
+    g.bloco.classList.add("arrastando");
+    document.body.classList.add("ag-arrastando");
+    if (g.toque && navigator.vibrate) navigator.vibrate(15);
+  }
+
+  window.addEventListener("pointermove", function (e) {
+    var g = arrastoAg;
+    if (!g || e.pointerId !== g.id) return;
+    if (!g.ativo) {
+      if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) < 6) return;
+      if (g.toque) { clearTimeout(g.timer); arrastoAg = null; return; } // mexeu o dedo antes: é só rolar a página
+      comecarArrastoAg();
+    }
+    e.preventDefault();
+    g.bloco.style.visibility = "hidden";
+    var embaixo = document.elementFromPoint(e.clientX, e.clientY);
+    g.bloco.style.visibility = "";
+    var col = embaixo && embaixo.closest(".ag-col");
+    if (!col) return;
+    var ini = numero(col.getAttribute("data-ini"));
+    var fimGrade = ini + Math.round(col.offsetHeight / ALTURA_HORA);
+    var hora = ini + Math.round((e.clientY - g.pegaY - col.getBoundingClientRect().top) / ALTURA_HORA);
+    hora = Math.max(ini, Math.min(hora, fimGrade - g.dur));
+    hora = Math.max(0, Math.min(24 - g.dur, hora));
+    if (g.bloco.parentNode !== col) col.appendChild(g.bloco);
+    g.bloco.style.top = ((hora - ini) * ALTURA_HORA + 1) + "px";
+    g.bloco.style.left = "2px"; g.bloco.style.width = "calc(100% - 4px)";
+    var pequeno = g.bloco.querySelector("small");
+    if (pequeno) pequeno.textContent = horaTxt(hora) + " às " + horaTxt(hora + g.dur);
+    g.alvo = { data: col.getAttribute("data-data"), hora: hora };
+  }, { passive: false });
+
+  function soltarArrastoAg(e, cancelou) {
+    var g = arrastoAg;
+    if (!g || e.pointerId !== g.id) return;
+    clearTimeout(g.timer);
+    arrastoAg = null;
+    document.body.classList.remove("ag-arrastando");
+    if (!g.ativo) return;
+    acabouDeArrastar = true;
+    setTimeout(function () { acabouDeArrastar = false; }, 80);
+    if (cancelou || !g.alvo || (g.alvo.data === g.origem && g.alvo.hora === numero(g.a.hora_inicio))) { redesenhar(); return; }
+    moverCompromisso(g.a, g.origem, g.alvo.data, g.alvo.hora);
+  }
+  window.addEventListener("pointerup", function (e) { soltarArrastoAg(e, false); });
+  window.addEventListener("pointercancel", function (e) { soltarArrastoAg(e, true); });
+
+  function moverCompromisso(a, origem, data, hora) {
+    var dur = numero(a.hora_fim) - numero(a.hora_inicio);
+    var horas = { hora_inicio: hora, hora_fim: hora + dur };
+    var quando = diaLongoFmt.format(dataDe(data)) + ", " + horaTxt(hora) + " às " + horaTxt(hora + dur);
+    function terminar(p) {
+      return p.then(function () { avisoRapido("Movido para " + quando); })
+        .catch(function (e) { console.error(e); avisoRapido(traduzirErro(e), true); })
+        .then(function () { if (janela.open) janela.close(); redesenhar(); });
+    }
+    function copiaAvulsa() {
+      return { titulo: a.titulo, categoria: a.categoria || "rotina", obs: a.obs || "", dias: [], data: data, hora_inicio: hora, hora_fim: hora + dur };
+    }
+
+    // Compromisso de uma vez só: muda direto
+    if (!ehRotina(a)) {
+      terminar(gravar("agenda", Object.assign({ data: data }, horas), a.id).then(function (l) { trocarNaLista(dados.agenda, l); }));
+      return;
+    }
+
+    // Rotina fixa: pergunta se é só neste dia ou toda semana
+    var dO = diaSemanaDe(origem), dN = diaSemanaDe(data);
+    var nomeTodo = (dN >= 5 ? "Todo " : "Toda ") + DIAS_AG[dN];
+    abrirJanela(cabecaJanela("Mover " + esc(a.titulo || "compromisso")) +
+      '<div class="janela-corpo">' +
+        "<p>Para <b>" + esc(quando) + "</b>.</p>" +
+        '<p class="fraco" style="margin-top:10px">Isso faz parte da sua rotina fixa. Quer mudar só neste dia ou em todas as semanas?</p>' +
+      "</div>" +
+      '<div class="janela-rodape">' +
+        '<button type="button" class="btn btn-linha" data-fechar>Cancelar</button>' +
+        '<span class="espaco"></span>' +
+        '<button type="button" class="btn btn-linha" id="mov-sempre">' + icone("repetir") + esc(nomeTodo) + "</button>" +
+        '<button type="button" class="btn btn-vinho" id="mov-um">Só neste dia</button>' +
+      "</div>");
+    var escolheu = false;
+    janela.addEventListener("close", function () { if (!escolheu) redesenhar(); }, { once: true });
+
+    $("#mov-um").addEventListener("click", function () {
+      escolheu = true; this.disabled = true;
+      terminar(gravar("agenda", copiaAvulsa(), null).then(function (l) {
+        trocarNaLista(dados.agenda, l);
+        return gravar("agenda", { pulos: listaPulos(a).concat([origem]) }, a.id);
+      }).then(function (l) { trocarNaLista(dados.agenda, l); }));
+    });
+
+    $("#mov-sempre").addEventListener("click", function () {
+      escolheu = true; this.disabled = true;
+      var dias = listaDias(a), p;
+      if (dias.length === 1) {
+        p = gravar("agenda", Object.assign({ dias: [dN] }, horas), a.id).then(function (l) { trocarNaLista(dados.agenda, l); });
+      } else {
+        // Este item vale para vários dias: tira só este dia dele e cria um novo para o dia escolhido
+        var resto = dias.filter(function (d) { return d !== dO; });
+        var jaTem = resto.indexOf(dN) >= 0 && hora === numero(a.hora_inicio);
+        p = gravar("agenda", { dias: resto }, a.id).then(function (l) {
+          trocarNaLista(dados.agenda, l);
+          if (jaTem) return null;
+          var novo = copiaAvulsa(); novo.dias = [dN]; novo.data = null;
+          return gravar("agenda", novo, null).then(function (l2) { trocarNaLista(dados.agenda, l2); });
+        });
+      }
+      terminar(p);
+    });
   }
 
   // Clicou num compromisso da grade

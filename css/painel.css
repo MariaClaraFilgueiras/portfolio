@@ -770,3 +770,8 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
   .ag-modos ~ .espaco{flex:0 0 100%!important;height:0}
   .ag-titulo{flex:1}
 }
+/* Arrastar compromissos na Agenda */
+.ag-bloco{cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.ag-bloco.arrastando{z-index:6;cursor:grabbing;box-shadow:0 8px 20px rgba(36,30,27,.28);filter:none;transition:top .06s ease}
+body.ag-arrastando,body.ag-arrastando *{cursor:grabbing!important;user-select:none}
+.ag-dica{flex-basis:100%;color:var(--tinta-fraca)}
