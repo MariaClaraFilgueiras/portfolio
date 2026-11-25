@@ -3823,12 +3823,10 @@
   }
 
   function horasDaAgenda() {
-    var ini = 5, fim = 19;
-    dados.agenda.forEach(function (a) {
-      ini = Math.min(ini, numero(a.hora_inicio));
-      fim = Math.max(fim, numero(a.hora_fim));
-    });
-    return [Math.max(0, ini), Math.min(24, fim)];
+    // A grade vai das 5h até a meia-noite (começa antes se tiver algo mais cedo)
+    var ini = 5;
+    dados.agenda.forEach(function (a) { ini = Math.min(ini, numero(a.hora_inicio)); });
+    return [Math.max(0, ini), 24];
   }
 
   function desenharAgenda(painel) {
