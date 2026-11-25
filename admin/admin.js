@@ -145,7 +145,8 @@
      3. CONVERSA COM O BANCO
      Se faltar uma tabela ou um campo, o painel avisa e segue.
      ========================================================= */
-  var NOMES = { videos: "videos", marcas: "marcas", calendario: "calendario", campanhas: "campanhas", marcados: "marcados", visitas: "visitas", transcricoes: "transcricoes", email_envios: "email_envios", email_optout: "email_optout", roteiros: "roteiros" };
+  var NOMES = { videos: "videos", marcas: "marcas", calendario: "calendario", campanhas: "campanhas", marcados: "marcados", visitas: "visitas", transcricoes: "transcricoes", email_envios: "email_envios", email_optout: "email_optout", roteiros: "roteiros", agenda: "agenda" };
+  var ARQUIVO_SQL = { roteiros: "roteiros.sql", agenda: "agenda.sql" };
   var COLUNAS = {
     videos: ["id", "titulo", "link", "nicho", "formato", "marca", "destaque", "ordem", "visivel", "exemplo"],
     marcas: ["id", "criado_em", "nome", "instagram", "email", "telefone", "situacao", "obs", "ultimo_contato", "origem", "nicho", "favorita", "selecionada", "enviado_em", "exemplo"],
@@ -156,7 +157,8 @@
     transcricoes: ["id", "criado_em", "link", "plataforma", "titulo", "criador", "transcricao", "observacoes", "exemplo"],
     email_envios: ["id", "data", "email", "assunto", "status", "erro", "resend_id", "canal", "marca_id"],
     email_optout: ["email", "data", "motivo"],
-    roteiros: ["id", "criado_em", "rede", "quadro", "titulo", "data", "status", "formato", "roteiro", "legenda", "link", "exemplo"]
+    roteiros: ["id", "criado_em", "rede", "quadro", "titulo", "data", "status", "formato", "roteiro", "legenda", "link", "exemplo"],
+    agenda: ["id", "criado_em", "titulo", "categoria", "dias", "data", "hora_inicio", "hora_fim", "pulos", "obs", "exemplo"]
   };
   var faltando = {};        // campos que não existem, por tabela
   var tabelaFalta = {};     // tabelas que não existem
@@ -180,12 +182,12 @@
   }
   function registrarTabelaFalta(tabela) {
     tabelaFalta[tabela] = true;
-    avisarFixo("t-" + tabela, 'Não encontrei a tabela "' + NOMES[tabela] + '" no banco. O que depende dela vai ficar vazio, e o resto do painel funciona normal. Para resolver, rode o arquivo banco.sql de novo no Supabase (SQL Editor).');
+    avisarFixo("t-" + tabela, 'Não encontrei a tabela "' + NOMES[tabela] + '" no banco. O que depende dela vai ficar vazio, e o resto do painel funciona normal. Para resolver, rode o arquivo ' + (ARQUIVO_SQL[tabela] || "banco.sql") + ' no Supabase (SQL Editor).');
   }
   function registrarCampoFalta(tabela, coluna) {
     faltando[tabela] = faltando[tabela] || {};
     faltando[tabela][coluna] = true;
-    avisarFixo("c-" + tabela + "-" + coluna, 'Na tabela "' + NOMES[tabela] + '" está faltando o campo "' + coluna + '". O painel segue funcionando sem ele. Para resolver, rode o arquivo banco.sql de novo no Supabase.');
+    avisarFixo("c-" + tabela + "-" + coluna, 'Na tabela "' + NOMES[tabela] + '" está faltando o campo "' + coluna + '". O painel segue funcionando sem ele. Para resolver, rode o arquivo ' + (ARQUIVO_SQL[tabela] || "banco.sql") + ' de novo no Supabase.');
   }
   function colunasOk(tabela) {
     var f = faltando[tabela] || {};
@@ -268,7 +270,7 @@
   /* =========================================================
      ESTADO: tudo o que veio do banco
      ========================================================= */
-  var dados = { videos: [], marcas: [], calendario: [], campanhas: [], marcados: {}, visitas: [], transcricoes: [], email_envios: [], email_optout: [], roteiros: [] };
+  var dados = { videos: [], marcas: [], calendario: [], campanhas: [], marcados: {}, visitas: [], transcricoes: [], email_envios: [], email_optout: [], roteiros: [], agenda: [] };
   var carregado = false;
 
   async function carregarTudo() {
@@ -283,7 +285,8 @@
       lerTabela("transcricoes"),
       lerTabela("email_envios"),
       lerTabela("email_optout"),
-      lerTabela("roteiros")
+      lerTabela("roteiros"),
+      lerTabela("agenda")
     ].map(function (p) { return p.catch(function (e) { console.error(e); return []; }); }));
     dados.videos = r[0]; dados.marcas = r[1]; dados.calendario = r[2]; dados.campanhas = r[3];
     dados.marcados = {};
@@ -293,6 +296,7 @@
     dados.email_envios = r[7];
     dados.email_optout = r[8];
     dados.roteiros = r[9];
+    dados.agenda = r[10];
     carregado = true;
   }
 
@@ -311,6 +315,7 @@
     instagram: { titulo: "Instagram", sub: "o seu perfil no Instagram", desenhar: emBreve("insta", "Aqui vai ficar o que você quiser acompanhar do seu Instagram: planejamento de posts, ideias e números.") },
     tiktok: { titulo: "TikTok", sub: "o seu perfil no TikTok", desenhar: emBreve("tiktok", "Aqui vai ficar o que você quiser acompanhar do seu TikTok: planejamento de vídeos, ideias e números.") },
     calendario: { titulo: "Calendário", sub: "gravar, editar e postar", desenhar: desenharCalendario },
+    agenda: { titulo: "Agenda", sub: "a sua rotina por horário, ligada ao Calendário", desenhar: desenharAgenda },
     campanhas: { titulo: "Campanhas", sub: "trabalhos fechados", desenhar: desenharCampanhas },
     checklist: { titulo: "Checklist Portfólio", sub: "consulta e revisão", desenhar: desenharChecklist },
     transcricoes: { titulo: "Transcrições", sub: "vídeos que eu gosto, com roteiro e observações", desenhar: desenharTranscricoes }
@@ -3757,6 +3762,374 @@
       },
       aoApagar: r ? function () { return apagar("roteiros", r.id).then(function () { tirarDaLista(dados.roteiros, r.id); }); } : null
     });
+  }
+
+  /* =========================================================
+     16. ABA AGENDA: a rotina da semana por horário
+     Rotina fixa (repete toda semana) + compromissos de uma vez só.
+     O que está no Calendário aparece na faixa de cima de cada dia.
+     ========================================================= */
+  var CATEGORIAS_AG = [["rotina", "Rotina"], ["exercicio", "Exercício"], ["trabalho", "Trabalho"], ["igreja", "Igreja"], ["casa", "Casa"], ["cuidar", "Cuidar de mim"]];
+  var DIAS_AG = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"];
+  var CURTO_AG = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
+  var ALTURA_HORA = 46;
+  var estadoAg = { modo: null, ref: null };
+  var diaMesFmt = new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "long" });
+
+  function diaSemanaDe(iso) { return (dataDe(iso).getDay() + 6) % 7; }
+  function segundaDe(iso) { return somarDias(iso, -diaSemanaDe(iso)); }
+  function horaTxt(h) { return doisDigitos(h) + "h"; }
+  function listaDias(a) { return (Array.isArray(a.dias) ? a.dias : []).map(Number).filter(function (n) { return n >= 0 && n <= 6; }); }
+  function listaPulos(a) { return (Array.isArray(a.pulos) ? a.pulos : []).map(function (p) { return String(p).slice(0, 10); }); }
+  function ehRotina(a) { return listaDias(a).length > 0; }
+  function nomeCategoria(c) { return (CATEGORIAS_AG.filter(function (x) { return x[0] === c; })[0] || ["", "Rotina"])[1]; }
+
+  function descreverDias(dias) {
+    dias = dias.slice().sort();
+    var t = dias.join(",");
+    if (t === "0,1,2,3,4,5,6") return "Todos os dias";
+    if (t === "0,1,2,3,4,5") return "De segunda a sábado";
+    if (t === "0,1,2,3,4") return "De segunda a sexta";
+    if (t === "5,6") return "Sábado e domingo";
+    var nomes = dias.map(function (d) { return DIAS_AG[d]; });
+    var fim = nomes.pop();
+    return maiuscula((nomes.length ? nomes.join(", ") + " e " : "") + fim);
+  }
+
+  // Tudo o que acontece num dia: a rotina fixa e os compromissos de uma vez só
+  function agendaDoDia(iso) {
+    var ds = diaSemanaDe(iso);
+    return dados.agenda.filter(function (a) {
+      if (ehRotina(a)) return listaDias(a).indexOf(ds) >= 0 && listaPulos(a).indexOf(iso) < 0;
+      return a.data && String(a.data).slice(0, 10) === iso;
+    }).sort(function (a, b) { return (a.hora_inicio - b.hora_inicio) || (a.hora_fim - b.hora_fim); });
+  }
+
+  // Quando dois compromissos caem na mesma hora, eles dividem a largura
+  function emFaixas(lista) {
+    var out = [], grupo = null, fimGrupo = -1, fins = [];
+    function fechar() { if (grupo) grupo.forEach(function (o) { o.total = fins.length; }); }
+    lista.forEach(function (a) {
+      if (!grupo || a.hora_inicio >= fimGrupo) { fechar(); grupo = []; fins = []; fimGrupo = -1; }
+      var f = 0;
+      while (fins[f] != null && fins[f] > a.hora_inicio) f++;
+      fins[f] = a.hora_fim;
+      var o = { a: a, faixa: f };
+      grupo.push(o); out.push(o);
+      fimGrupo = Math.max(fimGrupo, a.hora_fim);
+    });
+    fechar();
+    return out;
+  }
+
+  function horasDaAgenda() {
+    var ini = 5, fim = 19;
+    dados.agenda.forEach(function (a) {
+      ini = Math.min(ini, numero(a.hora_inicio));
+      fim = Math.max(fim, numero(a.hora_fim));
+    });
+    return [Math.max(0, ini), Math.min(24, fim)];
+  }
+
+  function desenharAgenda(painel) {
+    var hoje = hojeISO();
+    if (!estadoAg.modo) estadoAg.modo = window.innerWidth < 700 ? "dia" : "semana";
+    if (!estadoAg.ref) estadoAg.ref = hoje;
+    var modo = estadoAg.modo, ref = estadoAg.ref;
+
+    var porDataCal = {};
+    eventosDoCalendario().forEach(function (i) { var d = String(i.data).slice(0, 10); (porDataCal[d] = porDataCal[d] || []).push(i); });
+    Object.keys(porDataCal).forEach(function (d) {
+      porDataCal[d].sort(function (a, b) { return (a.feito - b.feito) || (ORDEM_TIPO[a.tipo] - ORDEM_TIPO[b.tipo]); });
+    });
+
+    var titulo, ehAgora;
+    if (modo === "semana") {
+      var seg = segundaDe(ref), dom = somarDias(seg, 6);
+      var a1 = diaMesFmt.format(dataDe(seg)), a2 = diaMesFmt.format(dataDe(dom));
+      titulo = (seg.slice(5, 7) === dom.slice(5, 7) ? dataDe(seg).getDate() : a1) + " a " + a2;
+      ehAgora = seg === segundaDe(hoje);
+    } else if (modo === "dia") {
+      titulo = maiuscula(diaLongoFmt.format(dataDe(ref)));
+      ehAgora = ref === hoje;
+    } else {
+      titulo = maiuscula(mesFmt.format(dataDe(ref)));
+      ehAgora = ref.slice(0, 7) === hoje.slice(0, 7);
+    }
+
+    var aviso = "";
+    if (!tabelaFalta.agenda && !dados.agenda.length) {
+      aviso = '<div class="faixa faixa-alerta bloco-espaco-baixo">A sua agenda está vazia. Para colocar a sua planilha de uma vez, rode o arquivo agenda-minha-rotina-privado.sql no Supabase. Ou clique em "Novo compromisso".</div>';
+    }
+
+    var corpo = modo === "mes" ? gradeMesAg(ref, hoje, porDataCal)
+      : gradeHorasAg(modo === "dia" ? [ref] : [0, 1, 2, 3, 4, 5, 6].map(function (n) { return somarDias(segundaDe(ref), n); }), hoje, porDataCal);
+
+    painel.innerHTML = aviso +
+      '<div class="cal-topo">' +
+        '<div class="rt-redes ag-modos" role="tablist" aria-label="Como ver a agenda">' +
+          [["dia", "Dia"], ["semana", "Semana"], ["mes", "Mês"]].map(function (m) {
+            return '<button type="button" class="rt-rede" role="tab" data-modo="' + m[0] + '" aria-selected="' + (modo === m[0]) + '">' + m[1] + "</button>";
+          }).join("") +
+        "</div>" +
+        '<button type="button" class="btn-icone" id="ag-antes" aria-label="Voltar">' + icone("esquerda") + "</button>" +
+        '<span class="cal-mes ag-titulo" aria-live="polite">' + esc(titulo) + "</span>" +
+        '<button type="button" class="btn-icone" id="ag-depois" aria-label="Avançar">' + icone("direita") + "</button>" +
+        '<button type="button" class="btn btn-linha" id="ag-hoje"' + (ehAgora ? " disabled" : "") + ">Hoje</button>" +
+        '<span class="espaco" style="flex:1"></span>' +
+        '<button type="button" class="btn btn-linha" id="ag-rotina">' + icone("repetir") + "Editar rotina fixa</button>" +
+        '<button type="button" class="btn btn-vinho" id="ag-novo">' + icone("mais") + "Novo compromisso</button>" +
+      "</div>" +
+      corpo +
+      '<div class="legenda">' + CATEGORIAS_AG.map(function (c) { return '<span><i class="ag-' + c[0] + '"></i>' + c[1] + "</span>"; }).join("") +
+        '<span><i class="ag-do-cal"></i>Vem do Calendário (gravar, postar, prazos e roteiros)</span>' +
+        '<span>' + icone("repetir", "ag-icone-legenda") + "Repete toda semana</span></div>";
+
+    $(".ag-modos", painel).addEventListener("click", function (e) {
+      var b = e.target.closest("[data-modo]"); if (!b) return;
+      estadoAg.modo = b.getAttribute("data-modo"); redesenhar();
+    });
+    function andar(sinal) {
+      if (modo === "dia") estadoAg.ref = somarDias(ref, sinal);
+      else if (modo === "semana") estadoAg.ref = somarDias(ref, 7 * sinal);
+      else { var d = dataDe(ref); estadoAg.ref = isoDe(new Date(d.getFullYear(), d.getMonth() + sinal, 1)); }
+      redesenhar();
+    }
+    $("#ag-antes").addEventListener("click", function () { andar(-1); });
+    $("#ag-depois").addEventListener("click", function () { andar(1); });
+    $("#ag-hoje").addEventListener("click", function () { estadoAg.ref = hoje; redesenhar(); });
+    $("#ag-novo").addEventListener("click", function () { formularioAgenda(null, { data: modo === "dia" ? ref : (ehAgora ? hoje : ref) }); });
+    $("#ag-rotina").addEventListener("click", janelaRotinaFixa);
+
+    painel.querySelector(".ag-caixa").addEventListener("click", function (e) {
+      var item = e.target.closest(".cal-item");
+      if (item) { abrirItemCal(item.getAttribute("data-fonte"), item.getAttribute("data-id")); return; }
+      var cab = e.target.closest("[data-ir-dia]");
+      if (cab) { estadoAg.modo = "dia"; estadoAg.ref = cab.getAttribute("data-ir-dia"); redesenhar(); return; }
+      var bloco = e.target.closest(".ag-bloco");
+      if (bloco) { abrirCompromisso(acharPorId(dados.agenda, bloco.getAttribute("data-id")), bloco.getAttribute("data-data")); return; }
+      var col = e.target.closest(".ag-col");
+      if (col) {
+        var ini = numero(col.getAttribute("data-ini"));
+        var y = e.clientY - col.getBoundingClientRect().top;
+        var hora = Math.min(23, ini + Math.max(0, Math.floor(y / ALTURA_HORA)));
+        formularioAgenda(null, { data: col.getAttribute("data-data"), hora: hora });
+      }
+    });
+
+    var agora = painel.querySelector(".ag-agora");
+    if (agora && modo !== "mes") {
+      var rolagem = painel.querySelector(".ag-rolagem");
+      if (rolagem && rolagem.scrollHeight > rolagem.clientHeight) rolagem.scrollTop = Math.max(0, agora.offsetTop - 120);
+    }
+  }
+
+  function gradeHorasAg(datas, hoje, porDataCal) {
+    var faixa = horasDaAgenda(), ini = faixa[0], fim = faixa[1], altura = (fim - ini) * ALTURA_HORA;
+    var agora = new Date(), minutos = agora.getHours() * 60 + agora.getMinutes();
+
+    var cabecas = "", cals = "", cols = "";
+    datas.forEach(function (iso) {
+      var d = dataDe(iso), ds = diaSemanaDe(iso), ehHoje = iso === hoje;
+      cabecas += '<button type="button" class="ag-cab' + (ehHoje ? " hoje" : "") + '" data-ir-dia="' + iso + '" title="Ver só este dia">' +
+        "<small>" + (datas.length === 1 ? DIAS_AG[ds] : CURTO_AG[ds]) + "</small><b>" + d.getDate() + "</b></button>";
+      var doCal = porDataCal[iso] || [];
+      cals += '<div class="ag-cal-dia">' + doCal.map(itemCal).join("") + "</div>";
+      var blocos = emFaixas(agendaDoDia(iso)).map(function (o) {
+        var a = o.a, h1 = Math.max(ini, numero(a.hora_inicio)), h2 = Math.min(fim, numero(a.hora_fim));
+        if (h2 <= h1) return "";
+        var curto = h2 - h1 === 1;
+        return '<button type="button" class="ag-bloco ag-' + esc(a.categoria || "rotina") + (curto ? " curto" : "") + '" data-id="' + esc(a.id) + '" data-data="' + iso + '" ' +
+          'style="top:' + ((h1 - ini) * ALTURA_HORA + 1) + "px;height:" + ((h2 - h1) * ALTURA_HORA - 3) + "px;left:calc(" + (o.faixa * 100 / o.total) + "% + 2px);width:calc(" + (100 / o.total) + '% - 4px)" ' +
+          'title="' + esc(a.titulo + ", " + horaTxt(a.hora_inicio) + " às " + horaTxt(a.hora_fim)) + '">' +
+          "<strong>" + (ehRotina(a) ? icone("repetir", "ag-rep") : "") + esc(a.titulo || "(sem nome)") + "</strong>" +
+          "<small>" + horaTxt(a.hora_inicio) + " às " + horaTxt(a.hora_fim) + "</small></button>";
+      }).join("");
+      var linhaAgora = ehHoje && minutos >= ini * 60 && minutos < fim * 60
+        ? '<i class="ag-agora" style="top:' + Math.round((minutos - ini * 60) * ALTURA_HORA / 60) + 'px" aria-hidden="true"></i>' : "";
+      cols += '<div class="ag-col' + (ehHoje ? " hoje" : "") + '" data-data="' + iso + '" data-ini="' + ini + '" style="height:' + altura + 'px" title="Clique num horário vazio para adicionar">' + blocos + linhaAgora + "</div>";
+    });
+
+    var horas = "";
+    for (var h = ini; h < fim; h++) horas += '<span style="top:' + ((h - ini) * ALTURA_HORA) + 'px">' + horaTxt(h) + "</span>";
+
+    return '<div class="cal-caixa ag-caixa"><div class="ag-rolagem"><div class="ag-grade' + (datas.length === 1 ? " um-dia" : "") + '" style="--colunas:' + datas.length + ";--hora:" + ALTURA_HORA + 'px">' +
+      '<div class="ag-canto"></div>' + cabecas +
+      '<div class="ag-canto ag-rotulo-cal">Calendário</div>' + cals +
+      '<div class="ag-horas" style="height:' + altura + 'px">' + horas + "</div>" + cols +
+    "</div></div></div>";
+  }
+
+  function gradeMesAg(ref, hoje, porDataCal) {
+    var r = dataDe(ref), mes = new Date(r.getFullYear(), r.getMonth(), 1);
+    var deslocamento = (mes.getDay() + 6) % 7;
+    var diasNoMes = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate();
+    var semanas = Math.ceil((deslocamento + diasNoMes) / 7);
+    var inicio = new Date(mes.getFullYear(), mes.getMonth(), 1 - deslocamento);
+    var celulas = "";
+    for (var i = 0; i < semanas * 7; i++) {
+      var d = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + i);
+      var iso = isoDe(d), fora = d.getMonth() !== mes.getMonth();
+      var doDia = agendaDoDia(iso), doCal = porDataCal[iso] || [];
+      var bolinhas = doDia.map(function (a) { return '<i class="ag-' + esc(a.categoria || "rotina") + '" title="' + esc(horaTxt(a.hora_inicio) + " " + a.titulo) + '"></i>'; }).join("");
+      var sobra = doCal.length - 2;
+      celulas += '<div class="cal-dia ag-mes-dia' + (fora ? " fora" : "") + (iso === hoje ? " hoje" : "") + '" data-ir-dia="' + iso + '" title="Ver este dia">' +
+        '<span class="cal-num">' + d.getDate() + "</span>" +
+        (bolinhas ? '<span class="ag-bolinhas">' + bolinhas + "</span>" : "") +
+        doCal.slice(0, 2).map(itemCal).join("") +
+        (sobra > 0 ? '<span class="cal-ver-mais">+' + sobra + " do calendário</span>" : "") + "</div>";
+    }
+    return '<div class="cal-caixa ag-caixa">' +
+      '<div class="cal-semana" aria-hidden="true">' + CURTO_AG.map(function (c) { return "<span>" + c + "</span>"; }).join("") + "</div>" +
+      '<div class="cal-grade">' + celulas + "</div></div>";
+  }
+
+  // Clicou num compromisso da grade
+  function abrirCompromisso(a, iso) {
+    if (!a) return;
+    if (!ehRotina(a)) { formularioAgenda(a); return; }
+    var quando = descreverDias(listaDias(a)) + ", das " + horaTxt(a.hora_inicio) + " às " + horaTxt(a.hora_fim);
+    abrirJanela(cabecaJanela(esc(a.titulo || "(sem nome)")) +
+      '<div class="janela-corpo">' +
+        '<p class="ag-detalhe"><span class="pilula ag-' + esc(a.categoria || "rotina") + ' sem-bola">' + esc(nomeCategoria(a.categoria)) + "</span> " + icone("repetir", "ag-rep") + esc(quando) + "</p>" +
+        (a.obs ? '<p class="fraco" style="margin-top:10px;white-space:pre-line">' + esc(a.obs) + "</p>" : "") +
+        '<p class="fraco" style="margin-top:14px">Faz parte da sua rotina fixa. Se só neste dia vai ser diferente, use o primeiro botão: as outras semanas continuam iguais.</p>' +
+      "</div>" +
+      '<div class="janela-rodape">' +
+        '<button type="button" class="btn btn-linha" id="ag-pular">Não vai ter em ' + esc(dataBR(iso).slice(0, 5)) + "</button>" +
+        '<span class="espaco"></span>' +
+        '<button type="button" class="btn btn-linha" data-fechar>Fechar</button>' +
+        '<button type="button" class="btn btn-vinho" id="ag-editar">' + icone("editar") + "Editar a rotina</button>" +
+      "</div>");
+    $("#ag-editar").addEventListener("click", function () { formularioAgenda(a); });
+    $("#ag-pular").addEventListener("click", function () {
+      var botao = this; botao.disabled = true;
+      gravar("agenda", { pulos: listaPulos(a).concat([iso]) }, a.id).then(function (linha) {
+        trocarNaLista(dados.agenda, linha); janela.close();
+        avisoRapido("Tirado só de " + dataBR(iso) + ". As outras semanas continuam iguais.");
+        redesenhar();
+      }).catch(function (e) { botao.disabled = false; avisoRapido(traduzirErro(e), true); });
+    });
+  }
+
+  // Lista da rotina fixa inteira, para editar com calma
+  function janelaRotinaFixa() {
+    var rotina = dados.agenda.filter(ehRotina).sort(function (a, b) {
+      return (Math.min.apply(null, listaDias(a)) - Math.min.apply(null, listaDias(b))) || (a.hora_inicio - b.hora_inicio);
+    });
+    abrirJanela(cabecaJanela("Rotina fixa") +
+      '<div class="janela-corpo">' +
+        '<p class="fraco" style="margin-bottom:12px">Isto se repete sozinho toda semana. Mudando aqui, muda em todas as semanas.</p>' +
+        (rotina.length ? '<ul class="lista-simples">' + rotina.map(function (a) {
+          return '<li><span class="pilula ag-' + esc(a.categoria || "rotina") + ' sem-bola">' + esc(nomeCategoria(a.categoria)) + "</span>" +
+            '<div class="miolo"><strong>' + esc(a.titulo || "(sem nome)") + "</strong><small>" + esc(descreverDias(listaDias(a))) + ", das " + horaTxt(a.hora_inicio) + " às " + horaTxt(a.hora_fim) + "</small></div>" +
+            '<button type="button" class="btn-icone" data-editar="' + esc(a.id) + '" aria-label="Editar ' + esc(a.titulo) + '">' + icone("editar") + "</button></li>";
+        }).join("") + "</ul>" : '<p class="vazio">Ainda não tem nada na rotina fixa.</p>') +
+      "</div>" +
+      '<div class="janela-rodape"><span class="espaco"></span><button type="button" class="btn btn-linha" data-fechar>Fechar</button>' +
+        '<button type="button" class="btn btn-vinho" id="ag-add-rotina">' + icone("mais") + "Adicionar na rotina</button></div>", true);
+    $$("[data-editar]", janela).forEach(function (b) {
+      b.addEventListener("click", function () { formularioAgenda(acharPorId(dados.agenda, b.getAttribute("data-editar"))); });
+    });
+    $("#ag-add-rotina").addEventListener("click", function () { formularioAgenda(null, { rotina: true }); });
+  }
+
+  // Formulário de compromisso (rotina fixa ou uma vez só)
+  function formularioAgenda(a, padrao) {
+    padrao = padrao || {};
+    var rotina = a ? ehRotina(a) : !!padrao.rotina;
+    var dataPadrao = padrao.data || hojeISO();
+    var dias = a && rotina ? listaDias(a) : [diaSemanaDe(dataPadrao)];
+    var hIni = a ? numero(a.hora_inicio) : (padrao.hora != null ? padrao.hora : 8);
+    var hFim = a ? numero(a.hora_fim) : Math.min(24, hIni + 1);
+    var cat = a ? a.categoria || "rotina" : "rotina";
+    var pulos = a ? listaPulos(a) : [];
+    function opcoesHora(de, ate, sel) {
+      var h = "";
+      for (var i = de; i <= ate; i++) h += '<option value="' + i + '"' + (i === sel ? " selected" : "") + ">" + (i === 24 ? "24h (meia-noite)" : horaTxt(i)) + "</option>";
+      return h;
+    }
+    abrirJanela(
+      '<form id="form-agenda" novalidate>' + cabecaJanela(a ? "Editar compromisso" : rotina ? "Adicionar na rotina fixa" : "Novo compromisso") +
+      '<div class="janela-corpo">' +
+        '<div class="faixa faixa-erro" id="erro-agenda" hidden></div>' +
+        '<div class="grade-campos">' +
+          '<div class="campo inteiro"><label for="ag-titulo">O que é *</label><input id="ag-titulo" name="titulo" type="text" value="' + esc(a ? a.titulo : "") + '" placeholder="ex: academia" autofocus></div>' +
+          '<div class="campo"><label for="ag-categoria">Tipo</label><select id="ag-categoria" name="categoria">' +
+            CATEGORIAS_AG.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === cat ? " selected" : "") + ">" + c[1] + "</option>"; }).join("") + "</select></div>" +
+          '<div class="campo"><label for="ag-repete">Repete?</label><select id="ag-repete" name="repete">' +
+            '<option value="sim"' + (rotina ? " selected" : "") + ">Toda semana (rotina fixa)</option>" +
+            '<option value="nao"' + (rotina ? "" : " selected") + ">Só uma vez</option></select></div>" +
+          '<fieldset class="campo inteiro ag-dias" id="ag-dias"' + (rotina ? "" : " hidden") + "><legend>Em quais dias</legend>" +
+            DIAS_AG.map(function (n, i) {
+              return '<label class="ag-dia-check"><input type="checkbox" name="dia" value="' + i + '"' + (dias.indexOf(i) >= 0 ? " checked" : "") + "><span>" + CURTO_AG[i] + "</span></label>";
+            }).join("") + "</fieldset>" +
+          '<div class="campo" id="ag-campo-data"' + (rotina ? " hidden" : "") + '><label for="ag-data">Dia *</label><input id="ag-data" name="data" type="date" value="' + esc(a && a.data ? String(a.data).slice(0, 10) : dataPadrao) + '"></div>' +
+          '<div class="campo"><label for="ag-ini">Começa</label><select id="ag-ini" name="hora_inicio">' + opcoesHora(0, 23, hIni) + "</select></div>" +
+          '<div class="campo"><label for="ag-fim">Termina</label><select id="ag-fim" name="hora_fim">' + opcoesHora(1, 24, hFim) + "</select></div>" +
+          '<div class="campo inteiro"><label for="ag-obs">Observação</label><textarea id="ag-obs" name="obs" placeholder="opcional">' + esc(a ? a.obs || "" : "") + "</textarea></div>" +
+          (pulos.length ? '<div class="campo campo-check inteiro"><input type="checkbox" id="ag-limpar" name="limpar"><label for="ag-limpar">Voltar a ter nos dias que foram tirados (' + esc(pulos.map(function (p) { return dataBR(p).slice(0, 5); }).join(", ")) + ")</label></div>" : "") +
+        "</div>" +
+      "</div>" +
+      '<div class="janela-rodape">' +
+        (a ? '<button type="button" class="btn btn-perigo" id="ag-apagar">' + icone("lixo") + "Apagar</button>" : "") +
+        '<span class="espaco"></span>' +
+        '<button type="button" class="btn btn-linha" data-fechar>Cancelar</button>' +
+        '<button type="submit" class="btn btn-vinho" id="ag-salvar">Salvar</button>' +
+      "</div></form>");
+
+    var form = $("#form-agenda");
+    function erro(t) { var el = $("#erro-agenda"); el.textContent = t; el.hidden = !t; }
+    form.repete.addEventListener("change", function () {
+      var sim = form.repete.value === "sim";
+      $("#ag-dias").hidden = !sim; $("#ag-campo-data").hidden = sim;
+    });
+    form.hora_inicio.addEventListener("change", function () {
+      var i = numero(form.hora_inicio.value);
+      if (numero(form.hora_fim.value) <= i) form.hora_fim.value = String(i + 1);
+    });
+    form.addEventListener("input", function () { erro(""); });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var titulo = form.titulo.value.trim();
+      if (!titulo) { erro('Preencha o campo "O que é".'); form.titulo.focus(); return; }
+      var repete = form.repete.value === "sim";
+      var escolhidos = $$('input[name="dia"]:checked', form).map(function (c) { return Number(c.value); });
+      if (repete && !escolhidos.length) { erro("Marque pelo menos um dia da semana."); return; }
+      if (!repete && !form.data.value) { erro("Escolha o dia."); form.data.focus(); return; }
+      var ini = numero(form.hora_inicio.value), fim = numero(form.hora_fim.value);
+      if (fim <= ini) { erro("A hora de terminar precisa ser depois da hora de começar."); return; }
+      var val = {
+        titulo: titulo, categoria: form.categoria.value,
+        dias: repete ? escolhidos : [], data: repete ? null : form.data.value,
+        hora_inicio: ini, hora_fim: fim, obs: form.obs.value.trim()
+      };
+      if (form.limpar && form.limpar.checked) val.pulos = [];
+      var botao = $("#ag-salvar");
+      botao.disabled = true; botao.textContent = "Salvando...";
+      gravar("agenda", val, a ? a.id : null).then(function (linha) {
+        trocarNaLista(dados.agenda, linha);
+        janela.close();
+        avisoRapido(repete ? "Salvo. Vai se repetir toda semana." : "Salvo");
+        redesenhar();
+      }).catch(function (e2) {
+        console.error(e2);
+        erro(traduzirErro(e2));
+        botao.disabled = false; botao.textContent = "Salvar";
+      });
+    });
+
+    if (a) {
+      $("#ag-apagar").addEventListener("click", function () {
+        var msg = ehRotina(a) ? "Apagar da rotina fixa? Vai sumir de todas as semanas. Isso não tem como desfazer." : "Apagar este compromisso? Isso não tem como desfazer.";
+        if (!confirm(msg)) return;
+        var botao = this; botao.disabled = true;
+        apagar("agenda", a.id).then(function () {
+          tirarDaLista(dados.agenda, a.id); janela.close(); avisoRapido("Apagado"); redesenhar();
+        }).catch(function (e2) { erro(traduzirErro(e2)); botao.disabled = false; });
+      });
+    }
   }
 
 })();

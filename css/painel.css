@@ -695,3 +695,78 @@ dialog.janela.extra-larga{width:min(1200px,calc(100% - 24px))}
 .rt-quadro-cabeca h2{display:flex;align-items:center;gap:8px;font-size:15px}
 .rt-quadro-cabeca h2 small{font-size:11.5px;font-weight:500;color:var(--tinta-fraca)}
 .rt-quadro + .rt-quadro-cabeca{margin-top:26px}
+
+/* =========================================================
+   ABA AGENDA: a rotina da semana por horário
+   ========================================================= */
+.bloco-espaco-baixo{margin-bottom:12px}
+.ag-modos{margin-bottom:0;margin-right:4px}
+.ag-modos .rt-rede{padding:6px 16px}
+.ag-titulo{min-width:190px}
+.ag-rolagem{overflow-x:auto}
+.ag-grade{display:grid;grid-template-columns:60px repeat(var(--colunas),minmax(0,1fr));min-width:760px}
+.ag-grade.um-dia{min-width:0}
+.ag-canto{background:var(--nude-claro);border-bottom:1px solid var(--linha)}
+.ag-cab{display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-left:1px solid var(--linha);border-bottom:1px solid var(--linha);background:var(--nude-claro);padding:6px 4px;color:var(--tinta-suave)}
+.ag-cab small{font-size:11px;font-weight:600}
+.ag-cab b{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:13px;font-size:13px}
+.ag-cab:hover b{background:var(--vinho-suave)}
+.ag-cab.hoje{color:var(--vinho)}
+.ag-cab.hoje b{background:var(--vinho);color:var(--creme)}
+.ag-rotulo-cal{display:flex;align-items:center;justify-content:flex-end;padding:4px 6px;font-size:9.5px;line-height:1.15;text-align:right;color:var(--tinta-fraca);background:#fbf8f5}
+.ag-cal-dia{display:flex;flex-direction:column;gap:3px;padding:4px;min-height:30px;min-width:0;border-left:1px solid var(--linha);border-bottom:1px solid var(--linha);background:#fbf8f5}
+.ag-horas{position:relative}
+.ag-horas span{position:absolute;right:7px;margin-top:3px;font-size:10.5px;color:var(--tinta-fraca)}
+.ag-horas{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--hora) - 1px),var(--linha) calc(var(--hora) - 1px),var(--linha) var(--hora))}
+.ag-col{position:relative;border-left:1px solid var(--linha);cursor:copy;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--hora) - 1px),var(--linha) calc(var(--hora) - 1px),var(--linha) var(--hora))}
+.ag-col.hoje{background-color:#fdf6f6}
+.ag-col:hover{background-color:#fdf9f6}
+.ag-bloco{position:absolute;display:flex;flex-direction:column;align-items:flex-start;gap:1px;overflow:hidden;border:0;border-left:3px solid;border-radius:0 6px 6px 0;padding:3px 6px;text-align:left;cursor:pointer;line-height:1.25}
+.ag-bloco:hover{filter:brightness(.96);z-index:2}
+.ag-bloco strong{display:flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;max-width:100%;overflow:hidden}
+.ag-bloco small{font-size:10.5px;opacity:.85}
+.ag-bloco.curto{flex-direction:row;align-items:center;gap:6px}
+.ag-bloco.curto strong{white-space:nowrap;text-overflow:ellipsis;min-width:0}
+.ag-bloco.curto small{flex-shrink:0}
+.ag-grade:not(.um-dia) .ag-bloco.curto small{display:none}
+.ag-rep{width:11px;height:11px;flex-shrink:0;opacity:.7}
+.ag-icone-legenda{width:12px;height:12px}
+.ag-agora{position:absolute;left:0;right:0;height:2px;background:var(--vermelho);z-index:3;pointer-events:none}
+.ag-agora::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--vermelho)}
+.ag-rotina{--ag-cor:#b9aca2;background:#ece6e0;color:#5a4a42;border-color:#b9aca2}
+.ag-exercicio{--ag-cor:#7fa08c;background:#dde9e1;color:#2f4139;border-color:#7fa08c}
+.ag-trabalho{--ag-cor:#9b88b8;background:#e7e0ee;color:#51406a;border-color:#9b88b8}
+.ag-igreja{--ag-cor:#d4b05a;background:#f8ecc9;color:#7a5a12;border-color:#d4b05a}
+.ag-casa{--ag-cor:#e3a271;background:#fde6d4;color:#9a4a12;border-color:#e3a271}
+.ag-cuidar{--ag-cor:#d08ab8;background:#f6dfee;color:#8a2a6b;border-color:#d08ab8}
+.legenda i.ag-do-cal{background:var(--branco);box-shadow:inset 0 0 0 1px var(--tinta-fraca)}
+.ag-mes-dia{min-height:96px}
+.ag-bolinhas{display:flex;flex-wrap:wrap;gap:3px;margin:1px 0 3px}
+.ag-bolinhas i{width:8px;height:8px;border-radius:50%;background:var(--ag-cor)}
+.ag-detalhe{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ag-dias{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px}
+.ag-dias legend{font-size:12px;font-weight:600;color:var(--tinta-suave);margin-bottom:6px;padding:0}
+.ag-dia-check input{position:absolute;opacity:0;width:1px;height:1px}
+.ag-dia-check span{display:inline-grid;place-items:center;min-width:46px;padding:6px 10px;border-radius:999px;border:1px solid var(--linha);background:var(--branco);font-size:12px;font-weight:500;color:var(--tinta-suave);cursor:pointer}
+.ag-dia-check input:checked + span{background:var(--vinho);border-color:var(--vinho);color:var(--creme)}
+.ag-dia-check input:focus-visible + span{outline:2px solid var(--vinho);outline-offset:2px}
+@media (max-width:700px){
+  .ag-titulo{min-width:0;flex:1}
+  .ag-mes-dia{min-height:64px}
+  .ag-mes-dia .cal-ver-mais{display:none}
+}
+.legenda i[class^="ag-"]{background:var(--ag-cor,var(--branco))}
+.campo.ag-dias{flex-direction:row;align-items:center}
+.ag-dia-check{position:relative;display:inline-flex}
+.ag-cal-dia .cal-item{font-size:11px;height:auto;padding:2px 6px;border-radius:5px}
+.ag-cal-dia .cal-item::before{display:block}
+@media (max-width:700px){
+  .ag-modos{width:100%;margin-right:0}
+  .ag-modos .rt-rede{flex:1;justify-content:center}
+  .ag-titulo{text-align:center;font-size:13px}
+}
+@media (max-width:700px){
+  .ag-titulo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ag-modos ~ .espaco{flex:0 0 100%!important;height:0}
+  .ag-titulo{flex:1}
+}
